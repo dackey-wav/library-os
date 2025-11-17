@@ -1,14 +1,23 @@
 from __future__ import annotations
 
 from datetime import datetime, date
-from sqlalchemy import String, Integer, ForeignKey, DateTime, Date, Enum as SQLEnum, func
+from sqlalchemy import String, Integer, ForeignKey, DateTime, Date, Enum as SQLEnum, func, MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import enum
 
+convention = {
+  "ix": "ix_%(column_0_label)s",                                        # indexes
+  "uq": "uq_%(table_name)s_%(column_0_name)s",                          # UNIQUE
+  "ck": "ck_%(table_name)s_%(constraint_name)s",                        # CHECK
+  "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",  # FOREIGN KEY
+  "pk": "pk_%(table_name)s"                                             # PRIMARY KEY
+}
+
+metadata = MetaData(naming_convention=convention)
 
 class Base(DeclarativeBase):
     """Base for all models"""
-    pass
+    metadata = MetaData(naming_convention=convention)
 
 
 class ReservationStatus(enum.Enum):
