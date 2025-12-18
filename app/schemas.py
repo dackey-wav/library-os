@@ -41,3 +41,13 @@ class Reservation(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class UserLogin(BaseModel):
+    login: str  # Тепер "login" замість "email" — може бути ID (число) або email
+    password: str
+
+class UserRegister(BaseModel):
+    name: str
+    email: str
+    password: str
+    role_name: str = "user"  # За замовчуванням "user", можна змінити на "student" або "teacher"

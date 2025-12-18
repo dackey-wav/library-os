@@ -44,3 +44,21 @@ def read_user_reservations(user_id: int, db: Session = Depends(get_db)):
                 res.book.genre_name = "Unknown"
     return reservations
 
+@app.post("/api/login", response_model=schemas.User)
+def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
+    print(f"Login attempt: {user_credentials.login}")  # Дебаг
+    user = crud.authenticate_user(db, user_credentials.login, user_credentials.password)
+    if not user:
+        print("Authentication failed")  # Дебаг
+        raise HTTPException(status_code=400, detail="Incorrect login or password")
+    print(f"Login successful: {user.name}")  # Дебаг
+    return user
+
+@app.post("/api/register", response_model=schemas.User)
+def register(user_data: schemas.UserRegister, db: Session = Depends(get_db)):
+    existing_user = crud.get_user_by_email(db, user_data.email)
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user = crud.create_user(db, user_data)
+    return user
+

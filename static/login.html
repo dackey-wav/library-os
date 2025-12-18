@@ -138,8 +138,8 @@
             <div id="view-login" class="view-section absolute top-0 left-0 w-full">
                 <form onsubmit="return false;" class="space-y-6 pt-2">
                     <div>
-                        <label class="text-[10px] text-cyan-400 font-mono tracking-widest block mb-1">USER_ID / EMAIL</label>
-                        <input type="email" class="cyber-input" placeholder="identity@library.os" autocomplete="off">
+                        <label class="text-[10px] text-cyan-400 font-mono tracking-widest block mb-1">USER_ID / EMAIL / LOGIN</label>
+                        <input type="text" class="cyber-input" placeholder="Enter user ID, email or login" autocomplete="off">
                     </div>
                     <div>
                         <label class="text-[10px] text-cyan-400 font-mono tracking-widest block mb-1">PASSPHRASE</label>
@@ -281,13 +281,37 @@
             }
         }
 
-        function handleLogin() {
-            const inputs = DOM.loginView.querySelectorAll('input');
-            if(inputs[0].value && inputs[1].value) {
-                window.location.href = 'index.html';
-            } else {
+        async function handleLogin() {
+            const loginInput = DOM.loginView.querySelector('input[type="text"]');  // Змінити на text, якщо потрібно
+            const passwordInput = DOM.loginView.querySelector('input[type="password"]');
+            const login = loginInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!login || !password) {
                 gsap.to('#main-card', { x: [-5, 5, -5, 5, 0], duration: 0.3, ease: "none" });
-                inputs[0].classList.add('border-red-500');
+                emailInput.classList.add('border-red-500');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login, password })  // Змінити на login
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    localStorage.setItem('user_id', user.id);  // Зберігаємо ID користувача
+                    localStorage.setItem('user_name', user.name);
+                    window.location.href = 'lib_ver1.html';  // Перенаправлення на dashboard
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Network error');
             }
         }
 
@@ -387,8 +411,7 @@
         stepperEls.btnNext.addEventListener('click', () => {
             if (stepperState.step < stepperState.total) goToStep(stepperState.step + 1);
             else { 
-                alert("Account Created!"); 
-                window.location.href = 'index.html'; 
+                handleRegister();  // Заміна на вашу функцію
             }
         });
 
