@@ -10,14 +10,14 @@
    For Windows, use the following commands:
    - ***./db-connect.ps1 owner***
    - ***./db-connect.ps1 user***
-   - (if don't specify a user, it will connect to the owner by default)\
+   - (if don't specify a user, it will connect to the owner by default)
 
-   For Windows, use the following commands:
+   For Linux, use the following commands:
    - ***./db-connect.sh owner***
    - ***./db-connect.sh user***
    - (if don't specify a user, it will connect to the owner by default)
 
-5. ***coming soon...***
+4. ***coming soon...***
 
 ## Project structure
 ```
