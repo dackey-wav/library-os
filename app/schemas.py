@@ -70,3 +70,11 @@ class UserRegister(BaseModel):
     name: str
     email: str
     password: str = Field(..., min_length=8, max_length=64)
+
+class ReservationCreate(BaseModel):
+    user_id: int
+    book_id: int
+    return_date: date
+
+    class Config:
+        from_attributes = True

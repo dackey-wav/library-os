@@ -266,6 +266,48 @@
         </main>
     </div>
 
+    <div id="reserve-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div class="glass-panel w-full max-w-md p-8 rounded-2xl scale-95 opacity-0 transition-all duration-300 transform" id="reserve-panel">
+            
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-white tracking-tight">CONFIRM_RESERVATION</h3>
+                <p id="modal-book-title" class="text-xs text-cyan-400 font-mono mt-1">BOOK_TITLE_HERE</p>
+            </div>
+
+            <div class="space-y-4">
+                <p class="text-[10px] text-white/40 font-mono tracking-widest uppercase">Select Duration:</p>
+                
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="selectDuration(7, this)" class="duration-btn px-4 py-3 rounded border border-white/10 bg-white/5 hover:border-cyan-400 hover:bg-cyan-900/20 text-xs font-bold text-white transition-all">
+                        1 WEEK
+                    </button>
+                    <button onclick="selectDuration(14, this)" class="duration-btn px-4 py-3 rounded border border-white/10 bg-white/5 hover:border-cyan-400 hover:bg-cyan-900/20 text-xs font-bold text-white transition-all">
+                        2 WEEKS
+                    </button>
+                    <button onclick="selectDuration(30, this)" class="duration-btn px-4 py-3 rounded border border-white/10 bg-white/5 hover:border-cyan-400 hover:bg-cyan-900/20 text-xs font-bold text-white transition-all">
+                        1 MONTH
+                    </button>
+                </div>
+
+                <div class="relative">
+                    <input type="number" id="custom-days" min="1" max="365" placeholder="ENTER CUSTOM DAYS..." 
+                        oninput="clearDurationButtons()"
+                        class="w-full bg-transparent border-b border-white/20 py-2 text-sm font-bold text-white focus:outline-none focus:border-cyan-400 transition-colors font-mono placeholder-white/20">
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 text-white/20 text-[10px]">DAYS</div>
+                </div>
+            </div>
+
+            <div class="flex gap-4 mt-8 pt-6 border-t border-white/10">
+                <button onclick="closeReserveModal()" class="flex-1 py-3 text-xs font-bold text-white/40 hover:text-white transition-colors">
+                    CANCEL
+                </button>
+                <button onclick="confirmReservation()" class="flex-1 py-3 bg-cyan-500/10 border border-cyan-500/50 hover:bg-cyan-400 hover:text-black rounded text-xs font-bold text-cyan-400 tracking-widest transition-all">
+                    CONFIRM_
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- CONFIG & STATE ---
         const storedId = localStorage.getItem('user_id');
@@ -329,7 +371,7 @@
                     author: r.book.author.name,
                     genre: r.book.genre.name,
                     date: r.return_date || "NO DATE",
-                    status: "ACTIVE"
+                    status: r.status
                 })));
 
             } catch (e) {
@@ -417,6 +459,20 @@
                 const genre = book.genre?.name || "OTHER";
                 const author = book.author?.name || "Unknown Author";
 
+                // --- ЛОГИКА ДОСТУПНОСТИ ---
+                const isAvailable = book.count > 0;
+                
+                // Цвет точки (Зеленый / Красный)
+                const dotColor = isAvailable 
+                    ? "bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]" 
+                    : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]";
+
+                // Состояние кнопки (Активна / Отключена)
+                // Если нет в наличии: меняем текст, убираем onclick, делаем серой
+                const btnHtml = isAvailable
+                    ? `<button onclick="openReserveModal(${book.id}, '${book.title.replace(/'/g, "\\'")}')" class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">RESERVE_</button>`
+                    : `<button disabled class="mt-2 w-full py-2 bg-white/5 border border-white/5 text-xs font-bold text-white/20 tracking-widest opacity-0 group-hover:opacity-100 cursor-not-allowed rounded">OUT_OF_STOCK</button>`;
+
                 card.innerHTML = `
                     <img src="${book.image}" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-500">
                     <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80"></div>
@@ -424,9 +480,11 @@
                         <span class="text-[10px] font-bold text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded w-fit backdrop-blur-sm border border-cyan-400/20">${genre.toUpperCase()}</span>
                         <h4 class="text-white font-bold leading-tight drop-shadow-md line-clamp-2">${book.title}</h4>
                         <p class="text-xs text-white/50 font-mono line-clamp-1">${author}</p>
-                        <button class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">RESERVE_</button>
+                        
+                        ${btnHtml}
                     </div>
-                    <div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+                    
+                    <div class="absolute top-3 right-3 w-2 h-2 rounded-full ${dotColor}"></div>
                 `;
                 
                 setTimeout(() => card.classList.remove('opacity-0', 'translate-y-4'), 50 + (index * 30));
@@ -611,8 +669,8 @@
                 el.className = `ticket-card card-${i}`;
                 el.style.transform = transformStyles[i];
                 el.style.zIndex = loans.length - i;
-                const statusColor = book.status === 'OVERDUE' ? 'text-red-500 animate-pulse' : 'text-green-400';
-                const dotColor = book.status === 'OVERDUE' ? 'bg-red-500' : 'bg-green-500';
+                const statusColor = book.status === 'overdue' ? 'text-red-500 animate-pulse' : 'text-green-400';
+                const dotColor = book.status === 'overdue' ? 'bg-red-500' : 'bg-green-500';
                 el.innerHTML = `<div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #22d3ee; box-shadow: 0 0 10px #22d3ee;"></div><div class="mt-2 flex justify-between items-start"><span class="text-[9px] font-bold border border-white/10 px-1.5 py-0.5 rounded text-white/60 tracking-wider bg-black/20">${(book.genre||'GENRE').toUpperCase()}</span><div class="w-1.5 h-1.5 rounded-full ${dotColor}"></div></div><div class="flex flex-col justify-center flex-grow"><h4 class="text-xl font-bold leading-tight text-white mb-1">${book.title}</h4><p class="text-[11px] text-white/40 font-mono">${book.author}</p></div><div class="border-t border-white/10 pt-3 flex justify-between items-end"><div><span class="block text-[8px] text-white/20 font-mono mb-0.5">RETURN BY</span><span class="text-xs font-mono font-bold ${statusColor}">${book.date}</span></div><span class="text-[9px] text-white/10 font-mono">#0${i + 1}</span></div>`;
                 el.addEventListener('mouseenter', () => {
                     loans.forEach((_, idx) => {
@@ -642,6 +700,115 @@
 
         setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString('ru-RU'), 1000);
         document.addEventListener('DOMContentLoaded', fetchUserData);
+
+        // --- 7. RESERVATION LOGIC ---
+        let currentBookId = null;
+        let selectedDays = 0;
+
+        const modalDOM = {
+            overlay: document.getElementById('reserve-modal'),
+            panel: document.getElementById('reserve-panel'),
+            title: document.getElementById('modal-book-title'),
+            customInput: document.getElementById('custom-days'),
+            btns: document.querySelectorAll('.duration-btn')
+        };
+
+        function openReserveModal(bookId, title) {
+            currentBookId = bookId;
+            modalDOM.title.textContent = title;
+            
+            // Сброс полей
+            selectedDays = 0;
+            modalDOM.customInput.value = '';
+            modalDOM.btns.forEach(b => b.classList.remove('border-cyan-400', 'bg-cyan-900/20', 'text-cyan-400'));
+
+            // Анимация открытия
+            modalDOM.overlay.classList.remove('hidden');
+            // Небольшая задержка для CSS transition
+            requestAnimationFrame(() => {
+                modalDOM.overlay.classList.remove('opacity-0');
+                modalDOM.panel.classList.remove('scale-95', 'opacity-0');
+                modalDOM.panel.classList.add('scale-100', 'opacity-100');
+            });
+        }
+
+        function closeReserveModal() {
+            modalDOM.overlay.classList.add('opacity-0');
+            modalDOM.panel.classList.remove('scale-100', 'opacity-100');
+            modalDOM.panel.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modalDOM.overlay.classList.add('hidden');
+                currentBookId = null;
+            }, 300);
+        }
+
+        function selectDuration(days, btnElement) {
+            selectedDays = days;
+            modalDOM.customInput.value = ''; // Очищаем кастомный ввод
+            
+            // UI Toggle
+            modalDOM.btns.forEach(b => b.classList.remove('border-cyan-400', 'bg-cyan-900/20', 'text-cyan-400'));
+            if(btnElement) {
+                btnElement.classList.add('border-cyan-400', 'bg-cyan-900/20', 'text-cyan-400');
+            }
+        }
+
+        function clearDurationButtons() {
+            selectedDays = 0; // Будем брать из value инпута при отправке
+            modalDOM.btns.forEach(b => b.classList.remove('border-cyan-400', 'bg-cyan-900/20', 'text-cyan-400'));
+        }
+
+        async function confirmReservation() {
+            // Определяем финальное количество дней
+            const customVal = parseInt(modalDOM.customInput.value);
+            const finalDays = customVal > 0 ? customVal : selectedDays;
+
+            if (!finalDays || finalDays <= 0) {
+                alert("PLEASE SELECT DURATION");
+                return;
+            }
+
+            if (finalDays > 31) {
+                alert("The return period cannot exceed 31 days.");
+                return;
+            }
+
+            // Вычисляем дату возврата (сегодня + days)
+            const returnDate = new Date();
+            returnDate.setDate(returnDate.getDate() + finalDays);
+
+            const formattedDate = returnDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            try {
+                // Пример отправки на API. 
+                // Твой бэкенд должен иметь endpoint POST /api/reservations/
+                const response = await fetch('/api/reservations/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: CURRENT_USER_ID,
+                        book_id: currentBookId,
+                        return_date: formattedDate
+                    })
+                });
+
+                if (response.ok) {
+                    closeReserveModal();
+                    // Обновляем данные на дашборде
+                    fetchUserData(); 
+                    // Можно добавить красивый Toast notification "RESERVED SUCCESS"
+                } else {
+                    const err = await response.json();
+                    alert("ERROR: " + (err.detail || "RESERVATION FAILED"));
+                }
+            } catch (e) {
+                console.error(e);
+                alert("NETWORK ERROR");
+            }
+        }
     </script>
 
     <script type="module">
