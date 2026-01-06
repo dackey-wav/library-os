@@ -1,4 +1,4 @@
-from datetime import timedelta, timezone, datetime
+from datetime import timedelta, timezone, datetime, date
 from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session, joinedload

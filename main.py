@@ -161,7 +161,14 @@ def login_page():
 
 
 @app.post("/api/reservations/", response_model=schemas.Reservation)
-def create_loan(reservation: schemas.ReservationCreate, db: Session = Depends(get_db)):
+def create_loan(
+    reservation: schemas.ReservationCreate,
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    db: Session = Depends(get_db)
+):
+    if current_user.id != reservation.user_id:
+        raise HTTPException(status_code=403, detail="Cannot reserve for another user")
+    
     new_reservation = crud.create_reservation(db, reservation_data=reservation)
     if not new_reservation:
         raise HTTPException(status_code=400, detail="Cannot create reservation")
@@ -169,7 +176,17 @@ def create_loan(reservation: schemas.ReservationCreate, db: Session = Depends(ge
 
 
 @app.patch("/api/reservations/{id}/return", response_model=schemas.Reservation)
-def return_loan(reservation_id: int, db: Session = Depends(get_db)):
+def return_loan(
+    reservation_id: int,
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    db: Session = Depends(get_db)
+):
+    reservation = db.query(models.Reservation).filter(models.Reservation.id == reservation_id).first()
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    if reservation.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Cannot return another user's reservation")
+
     result = crud.return_reservation(db, reservation_id)
     if not result:
         raise HTTPException(status_code=400, detail="Cannot return this reservation")
