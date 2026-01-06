@@ -79,3 +79,11 @@ class TokenData(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ReservationCreate(BaseModel):
+    user_id: int
+    book_id: int
+    return_date: date
+
+    class Config:
+        from_attributes = True

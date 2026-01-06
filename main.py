@@ -97,6 +97,7 @@ def read_books(
 
     return {"items": books, "total_items": total_items, "skip": skip, "limit": limit}
 
+
 @app.get("/api/users/{user_id}/reservations/", response_model=list[schemas.Reservation])
 def read_user_reservations(
     user_id: int,
@@ -108,10 +109,12 @@ def read_user_reservations(
     reservations = crud.get_user_reservations(db, user_id=user_id)
     return reservations
 
+
 @app.get("/api/genres/", response_model=list[schemas.Genre])
 def read_genres(db: Session = Depends(get_db)):
     genres = crud.get_genres(db)
     return genres
+
 
 @app.get("/api/authors/", response_model=list[schemas.Author])
 def read_authors(db: Session = Depends(get_db)):
@@ -155,3 +158,19 @@ def index():
 @app.get("/login")
 def login_page():
     return FileResponse(path="static/login.html")
+
+
+@app.post("/api/reservations/", response_model=schemas.Reservation)
+def create_loan(reservation: schemas.ReservationCreate, db: Session = Depends(get_db)):
+    new_reservation = crud.create_reservation(db, reservation_data=reservation)
+    if not new_reservation:
+        raise HTTPException(status_code=400, detail="Cannot create reservation")
+    return new_reservation
+
+
+@app.patch("/api/reservations/{id}/return", response_model=schemas.Reservation)
+def return_loan(reservation_id: int, db: Session = Depends(get_db)):
+    result = crud.return_reservation(db, reservation_id)
+    if not result:
+        raise HTTPException(status_code=400, detail="Cannot return this reservation")
+    return result

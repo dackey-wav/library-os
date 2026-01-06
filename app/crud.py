@@ -2,7 +2,7 @@ from datetime import timedelta, timezone, datetime
 from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_
+from sqlalchemy import or_, text, select, exists
 from . import models
 
 import jwt
@@ -59,11 +59,26 @@ def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 def get_user_reservations(db: Session, user_id: int, skip: int = 0, limit: int = 5):
+    stmt = select(models.Reservation).where(
+        models.Reservation.return_date < date.today(),
+        models.Reservation.status == 'active'
+    )
+
+    overdue_reservations = db.execute(stmt).scalars().all()
+
+    for res in overdue_reservations:
+        res.status = 'overdue'
+
+    db.commit()    
+
     return db.query(models.Reservation).options(
         joinedload(models.Reservation.book).joinedload(models.Book.author),
         joinedload(models.Reservation.book).joinedload(models.Book.genre)
-        ).filter(models.Reservation.user_id ==
-            user_id).offset(skip).limit(limit).all()
+        ).filter(
+            models.Reservation.user_id == user_id,
+            models.Reservation.status.in_(['active', 'overdue'])
+        ).order_by(models.Reservation.return_date.asc()).offset(skip).limit(limit).all()
+
 def get_genres(db: Session):
     return db.query(models.Genre).all()
 
@@ -116,3 +131,60 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def create_reservation(db: Session, reservation_data):
+    stmt_available = select(
+        exists().where(
+            models.Book.id == reservation_data.book_id,
+            models.Book.count > 0
+        )
+    ) 
+    
+    available = db.execute(stmt_available).scalar()
+    if not available:
+        return False
+    
+    stmt_same_reservation = select(
+        exists().where(
+            models.Reservation.book_id == reservation_data.book_id,
+            models.Reservation.user_id == reservation_data.user_id
+        )
+    )
+
+    same = db.execute(stmt_same_reservation).scalar()
+    if same:
+        return False
+
+    new_reservation = models.Reservation(
+        book_id=reservation_data.book_id,
+        user_id=reservation_data.user_id,
+        return_date=reservation_data.return_date
+    )
+    db.add(new_reservation)
+    book = db.query(models.Book).filter(models.Book.id == reservation_data.book_id).first()
+    if book:
+        book.count -= 1
+    db.commit()
+    db.refresh(new_reservation)
+    return new_reservation
+
+
+def return_reservation(db: Session, reservation_id: int):
+    reservation = db.query(models.Reservation).filter(
+        models.Reservation.id == reservation_id,
+        models.Reservation.status == "active"
+    ).first()
+    
+    if not reservation:
+        return None
+    
+    reservation.status = "returned"
+    
+    book = db.query(models.Book).filter(models.Book.id == reservation.book_id).first()
+    if book:
+        book.count += 1
+    
+    db.commit()
+    db.refresh(reservation)
+    return reservation
