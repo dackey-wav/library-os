@@ -27,7 +27,7 @@ app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-app.mount("/static/login.html", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/dataset", StaticFiles(directory=r"data\dataset"), name="dataset")
 
 def get_db():
@@ -118,6 +118,10 @@ def read_authors(db: Session = Depends(get_db)):
     authors = crud.get_authors(db)
     return authors
 
+@app.get("/api/me", response_model=schemas.User)
+def read_users_me(current_user: Annotated[schemas.User, Depends(get_current_user)]):
+    return current_user
+
 @app.post("/token", response_model=schemas.Token)
 def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -145,5 +149,9 @@ def register(user_data: schemas.UserRegister, db: Session = Depends(get_db)):
     return user
 
 @app.get("/")
-def index(current_user: Annotated[schemas.User, Depends(get_current_user)]):
+def index():
     return FileResponse(path="static/index.html")
+
+@app.get("/login")
+def login_page():
+    return FileResponse(path="static/login.html")

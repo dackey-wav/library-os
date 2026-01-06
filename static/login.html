@@ -256,12 +256,12 @@
         async function handleLogin() {
             const loginInput = document.getElementById('login-email');
             const passwordInput = document.getElementById('login-pass');
-            const login = loginInput.value.trim();
+            const email = loginInput.value.trim();
             const password = passwordInput.value.trim();
 
-            if (!login || !password) {
+            if (!email || !password) {
                 shakeCard();
-                if(!login) loginInput.classList.add('error');
+                if(!email) loginInput.classList.add('error');
                 if(!password) passwordInput.classList.add('error');
                 setTimeout(() => {
                     loginInput.classList.remove('error');
@@ -271,17 +271,20 @@
             }
 
             try {
-                const response = await fetch('/api/login', {
+                const formData = new URLSearchParams();
+                formData.append('username', email);
+                formData.append('password', password);
+
+                const response = await fetch('/token', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login, password })
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
                 });
 
                 if (response.ok) {
-                    const user = await response.json();
-                    localStorage.setItem('user_id', user.id);
-                    localStorage.setItem('user_name', user.name);
-                    window.location.href = 'index.html';
+                    const tokenData = await response.json();
+                    localStorage.setItem('access_token', tokenData.access_token);
+                    window.location.href = '/';
                 } else {
                     const error = await response.json();
                     alert(error.detail || 'Login failed');
@@ -372,8 +375,7 @@
             const email = document.getElementById('reg-email').value.trim();
             const password = document.getElementById('reg-pass').value.trim();
             
-            // Роль всегда user, админы добавляются вручную в БД
-            const role_name = "user"; 
+            const role_name = "user";
 
             try {
                 const response = await fetch('/api/register', {
@@ -383,10 +385,25 @@
                 });
 
                 if (response.ok) {
-                    const user = await response.json();
-                    localStorage.setItem('user_id', user.id);
-                    localStorage.setItem('user_name', user.name);
-                    window.location.href = 'index.html';
+                    // После успешной регистрации логиним юзера
+                    const formData = new URLSearchParams();
+                    formData.append('username', email);
+                    formData.append('password', password);
+
+                    const loginResponse = await fetch('/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData
+                    });
+
+                    if (loginResponse.ok) {
+                        const tokenData = await loginResponse.json();
+                        localStorage.setItem('access_token', tokenData.access_token);
+                        window.location.href = '/';
+                    } else {
+                        alert('Registration OK but login failed. Please log in manually.');
+                        window.location.href = '/login';
+                    }
                 } else {
                     const error = await response.json();
                     alert(error.detail || 'Registration failed');
