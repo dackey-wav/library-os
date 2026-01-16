@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Library OS - Dashboard</title>
+    <title>Library OS - System</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,29 +11,53 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
             background-color: #050505;
             overflow: hidden;
-            margin: 0;
             font-family: 'Space Mono', monospace;
             color: white;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
         }
         
-        #canvas-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        /* UNIFIED CANVAS */
+        #unified-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
         }
 
+        /* PAGE VIEWS */
+        .page-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: none;
+        }
+
+        .page-view.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* GLASS PANELS */
         .glass-panel {
             background: rgba(10, 10, 12, 0.6);
             backdrop-filter: blur(12px);
@@ -41,12 +65,60 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        /* Scrollbar */
+        /* LOGIN PAGE STYLES */
+        .cyber-input {
+            width: 100%; background: transparent; border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 0; font-family: 'Space Mono', monospace;
+            color: white; font-size: 1.1rem; transition: all 0.3s; border-radius: 0;
+        }
+        .cyber-input:focus {
+            outline: none; border-bottom-color: #22d3ee;
+            box-shadow: 0 10px 20px -10px rgba(34, 211, 238, 0.1);
+        }
+        .cyber-input::placeholder { color: rgba(255, 255, 255, 0.2); font-size: 0.9rem; }
+        .cyber-input.error { border-bottom-color: #ef4444; }
+
+        .btn-primary {
+            background: #22d3ee; color: #000; font-weight: bold; border-radius: 99px;
+            padding: 10px 24px; transition: all 0.3s; cursor: pointer; display: inline-block;
+            border: none; width: 100%;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.6); transform: translateY(-1px);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none;
+        }
+
+        /* STEPPER */
+        .step-circle {
+            width: 2.5rem; height: 2.5rem; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; transition: all 0.3s ease; position: relative; z-index: 10;
+        }
+        .connector-bg {
+            position: absolute; top: 50%; left: 0; width: 100%; height: 2px;
+            background: rgba(255, 255, 255, 0.1); transform: translateY(-50%); z-index: 0;
+        }
+        .connector-fill {
+            position: absolute; top: 50%; left: 0; height: 2px;
+            background: #22d3ee; transform: translateY(-50%); z-index: 0;
+            width: 0%; transition: width 0.4s ease;
+        }
+        .step-slide {
+            position: absolute; top: 0; left: 0; width: 100%;
+            opacity: 0; visibility: hidden; will-change: transform, opacity;
+        }
+        .step-slide.active {
+            opacity: 1; visibility: visible; position: relative;
+        }
+
+        /* DASHBOARD STYLES */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
 
-        /* BounceCards */
         #cards-container {
             position: relative; width: 100%; height: 300px;
             display: flex; justify-content: center; align-items: center;
@@ -60,6 +132,7 @@
             display: flex; flex-direction: column; justify-content: space-between;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); cursor: pointer; overflow: hidden;
             transform-origin: center center; will-change: transform;
+            transform: translateZ(0);
         }
 
         .ticket-card.is-hovered { z-index: 50 !important; }
@@ -69,16 +142,8 @@
             pointer-events: none;
         }
 
-        /* Views Optimization */
-        #view-dashboard, #view-catalog {
-            will-change: opacity, transform;
-            -webkit-font-smoothing: antialiased;
-            backface-visibility: hidden; perspective: 1000px;
-        }
-
         .catalog-card { will-change: transform, opacity; }
 
-        /* Dropdowns */
         .dropdown-btn {
             display: flex; align-items: center; gap: 8px; padding: 6px 12px;
             border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1);
@@ -96,232 +161,1040 @@
             box-shadow: 0 10px 40px -10px rgba(0,0,0,0.8);
             opacity: 0; visibility: hidden; transform: translateY(-10px);
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); z-index: 50;
+            contain: layout style paint;
         }
         .dropdown-menu.open { opacity: 1; visibility: visible; transform: translateY(0); }
         .dropdown-item {
             display: block; width: 100%; padding: 10px 16px; text-align: left;
             color: rgba(255, 255, 255, 0.6); font-size: 0.75rem; font-family: 'Space Mono', monospace;
             cursor: pointer; transition: background 0.2s;
+            will-change: background, color;
         }
         .dropdown-item:hover { background: rgba(255, 255, 255, 0.05); color: white; }
         .dropdown-item.selected { color: #22d3ee; background: rgba(34, 211, 238, 0.05); }
     </style>
 </head>
-<body class="h-screen w-screen flex items-center justify-center p-4 md:p-8">
+<body>
 
-    <canvas id="canvas-container"></canvas>
+    <canvas id="unified-canvas"></canvas>
 
-    <div class="w-full max-w-7xl h-full grid grid-cols-12 gap-6 relative z-10">
-        
-        <aside class="col-span-12 md:col-span-3 flex flex-col justify-between glass-panel rounded-2xl p-6 h-full">
-            <div>
-                <div class="mb-12">
-                    <h1 class="text-4xl font-bold tracking-tighter leading-none mb-2">LIB<br>OS_</h1>
-                    <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        <span class="text-xs text-white/40 tracking-widest">SYSTEM ONLINE</span>
-                    </div>
-                </div>
-
-                <nav class="space-y-1">
-                    <a href="#" onclick="switchView('catalog'); return false;" id="nav-catalog" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
-                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">01</span>
-                        <span class="text-sm tracking-wide">CATALOG_SEARCH</span>
-                    </a>
-                    <a href="#" onclick="switchView('dashboard'); return false;" id="nav-dashboard" class="block px-4 py-3 rounded-lg text-cyan-400 bg-white/5 transition-all group flex items-center gap-3 border-l-2 border-cyan-400">
-                        <span class="text-xs opacity-60 font-mono">02</span>
-                        <span class="text-sm tracking-wide font-bold">MY_LOANS</span>
-                    </a>
-                    <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
-                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">03</span>
-                        <span class="text-sm tracking-wide">HISTORY_LOG</span>
-                    </a>
-                    <a href="#" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
-                        <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">04</span>
-                        <span class="text-sm tracking-wide">AI_RECOMMEND</span>
-                    </a>
-                </nav>
+    <!-- LOGIN PAGE -->
+    <div id="login-page" class="page-view active">
+        <div class="glass-panel w-full max-w-lg rounded-3xl p-8 relative overflow-hidden" style="box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold tracking-tighter mb-1" id="login-header-title">SYSTEM_GATEWAY</h1>
+                <p class="text-xs text-white/40 tracking-widest" id="login-header-subtitle">AUTHENTICATION REQUIRED</p>
             </div>
-            <div class="text-xs text-white/20 font-mono">v2.1.0 // LIVE</div>
-        </aside>
 
-
-        <main class="col-span-12 md:col-span-9 h-full relative overflow-hidden">
-            <div id="content-stack" class="relative w-full h-full">
-
-                <div id="view-dashboard" class="absolute inset-0 flex flex-col gap-6 transition-none">
-                    <div class="glass-panel rounded-2xl p-6 flex justify-between items-center h-24 shrink-0">
+            <div id="login-views-wrapper" class="relative min-h-[300px]">
+                
+                <!-- LOGIN VIEW -->
+                <div id="view-login" class="view-section">
+                    <form onsubmit="return false;" class="space-y-6 pt-2">
                         <div>
-                            <h2 class="text-xl font-bold text-white tracking-tight">WELCOME BACK, <span id="user-name" class="text-cyan-400">LOADING...</span></h2>
-                            <p id="user-details" class="text-xs text-white/40 font-mono mt-1">CONNECTING...</p>
+                            <label class="text-[10px] text-cyan-400 font-mono tracking-widest block mb-1">EMAIL</label>
+                            <input type="text" id="login-email" class="cyber-input" placeholder="Enter email" autocomplete="off">
                         </div>
-                        <div class="text-right">
-                            <p class="text-xs text-white/40 font-mono mb-1">CURRENT DATE</p>
-                            <p class="text-lg font-bold tracking-widest" id="clock">00:00:00</p>
+                        <div>
+                            <label class="text-[10px] text-cyan-400 font-mono tracking-widest block mb-1">PASSPHRASE</label>
+                            <input type="password" id="login-pass" class="cyber-input" placeholder="••••••••••••" maxlength="70">
                         </div>
-                    </div>
-
-                    <div class="glass-panel rounded-2xl p-8 flex-1 flex flex-col relative overflow-hidden">
-                        <div class="flex justify-between items-end mb-4 relative z-20">
-                            <div>
-                                <h3 class="text-sm text-cyan-400 tracking-widest mb-1">ACTIVE RESERVATIONS</h3>
-                                <p class="text-xs text-white/40 max-w-md">Displaying recent active loans from database.</p>
-                            </div>
-                            <button onclick="switchView('catalog')" class="px-4 py-2 border border-white/20 rounded hover:bg-white/10 text-xs transition-colors">
-                                BROWSE_CATALOG ->
+                        
+                        <div class="pt-4">
+                            <button onclick="handleLogin()" class="btn-primary shadow-[0_0_20px_rgba(34,211,238,0.3)]">
+                                ENTER_SYSTEM
                             </button>
                         </div>
-                        <div id="cards-container" class="mt-8 flex justify-center items-center">
-                            </div>
-                        <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
-                    </div>
 
-                    <div class="grid grid-cols-3 gap-6 h-32 shrink-0">
-                        <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-purple-500">
-                            <span class="text-xs text-white/40 font-mono mb-2">TOTAL_READ</span>
-                            <div class="flex items-baseline gap-2"><span class="text-4xl font-bold">42</span><span class="text-xs text-white/20">BOOKS</span></div>
+                        <div class="text-center pt-4 border-t border-white/10 mt-6">
+                            <p class="text-xs text-white/40 mb-3">NO IDENTITY FOUND?</p>
+                            <button onclick="switchLoginMode('register')" class="text-xs text-cyan-400 tracking-widest border border-cyan-400/30 px-4 py-2 rounded hover:bg-cyan-400/10 transition-colors">
+                                INITIALIZE_NEW_PROTOCOL ->
+                            </button>
                         </div>
-                        <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-green-500">
-                            <span class="text-xs text-white/40 font-mono mb-2">ON_HAND</span>
-                            <div class="flex items-baseline gap-2"><span id="active-count" class="text-4xl font-bold">--</span><span class="text-xs text-white/20">ACTIVE</span></div>
-                        </div>
-                        <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-orange-500">
-                            <span class="text-xs text-white/40 font-mono mb-2">FAV_GENRE</span>
-                            <div class="flex items-baseline gap-2"><span class="text-2xl font-bold truncate">SCI-FI</span></div>
-                        </div>
-                    </div>
+                    </form>
                 </div>
 
-                <div id="view-catalog" class="absolute inset-0 flex flex-col gap-6 opacity-0 pointer-events-none">
+                <!-- REGISTER VIEW -->
+                <div id="view-register" class="view-section absolute top-0 left-0 w-full opacity-0 translate-x-[110%] pointer-events-none">
                     
-                    <div class="glass-panel rounded-2xl p-6 flex flex-col justify-center h-48 shrink-0 gap-4 relative z-20">
+                    <div class="relative w-full px-6 mb-8">
+                        <div class="connector-bg"></div>
+                        <div id="connector-fill" class="connector-fill"></div>
+                        <div class="relative flex justify-between z-10">
+                            <div class="step-indicator" data-step="1"><div class="step-circle bg-gray-900 text-white border border-white/20">1</div></div>
+                            <div class="step-indicator" data-step="2"><div class="step-circle bg-gray-900 text-white/40 border border-white/10">2</div></div>
+                            <div class="step-indicator" data-step="3"><div class="step-circle bg-gray-900 text-white/40 border border-white/10">3</div></div>
+                        </div>
+                    </div>
+
+                    <div id="steps-wrapper" class="relative min-h-[220px]">
+                        <div class="step-slide active" data-step="1">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] text-cyan-400 font-mono tracking-widest block mb-1">FULL_NAME</label>
+                                    <input type="text" id="reg-name" class="cyber-input" placeholder="Enter designation...">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-cyan-400 font-mono tracking-widest block mb-1">EMAIL_ADDRESS</label>
+                                    <input type="email" id="reg-email" class="cyber-input" placeholder="user@domain.net">
+                                </div>
+                            </div>
+                        </div>
                         
-                        <div>
-                            <label class="text-xs text-cyan-400 font-mono mb-2 tracking-widest">DATABASE_QUERY</label>
-                            <div class="relative w-full">
-                                <input type="text" id="search-input" 
-                                    class="w-full bg-transparent border-b border-white/20 py-2 text-2xl font-bold text-white focus:outline-none focus:border-cyan-400 transition-colors font-mono placeholder-white/20"
-                                    placeholder="ENTER KEYWORDS..." autocomplete="off">
-                                <div class="absolute right-0 top-1/2 -translate-y-1/2 text-white/20 animate-pulse">_</div>
+                        <div class="step-slide" data-step="2">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] text-cyan-400 font-mono tracking-widest block mb-1">PASSPHRASE</label>
+                                    <input type="password" id="reg-pass" class="cyber-input" placeholder="••••••••••••" maxlength="70">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-cyan-400 font-mono tracking-widest block mb-1">CONFIRM</label>
+                                    <input type="password" id="reg-confirm" class="cyber-input" placeholder="••••••••••••" maxlength="70">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-6">
-                            
-                            <div class="flex items-center gap-3">
-                                <span class="text-[10px] text-white/30 font-mono tracking-widest uppercase">Filter:</span>
+                        <div class="step-slide" data-step="3">
+                            <div class="space-y-5">
+                                <p class="text-xs text-white/50 mb-2">Review protocol data before initialization.</p>
                                 
-                                <div class="relative group-dropdown">
-                                    <button id="btn-genre" class="dropdown-btn" onclick="toggleDropdown('genre')">
-                                        <span>GENRE</span>
-                                        <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </button>
-                                    <div id="dropdown-genre" class="dropdown-menu"></div>
-                                </div>
-
-                                <div class="relative group-dropdown">
-                                    <button id="btn-author" class="dropdown-btn" onclick="toggleDropdown('author')">
-                                        <span>AUTHOR</span>
-                                        <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </button>
-                                    <div id="dropdown-author" class="dropdown-menu"></div>
-                                </div>
-                            </div>
-
-                            <div class="w-px h-6 bg-white/10"></div>
-
-                            <div class="flex items-center gap-3">
-                                <span class="text-[10px] text-white/30 font-mono tracking-widest uppercase">Sort:</span>
-                                <div class="relative group-dropdown">
-                                    <button id="btn-sort" class="dropdown-btn active" onclick="toggleDropdown('sort')">
-                                        <span>DEFAULT</span>
-                                        <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </button>
-                                    <div id="dropdown-sort" class="dropdown-menu">
-                                        <div class="dropdown-item selected" onclick="applySort('default')">DEFAULT (ID)</div>
-                                        <div class="dropdown-item" onclick="applySort('asc')">TITLE (A-Z)</div>
-                                        <div class="dropdown-item" onclick="applySort('desc')">TITLE (Z-A)</div>
+                                <div class="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                                    <div>
+                                        <span class="text-[9px] text-white/30 tracking-widest block">IDENTITY</span>
+                                        <span id="summary-name" class="text-sm font-bold text-white">Loading...</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-white/30 tracking-widest block">COMMUNICATION</span>
+                                        <span id="summary-email" class="text-sm font-bold text-cyan-400">Loading...</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-white/30 tracking-widest block">CLEARANCE LEVEL</span>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                            <span class="text-xs font-mono">STANDARD USER</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <button id="btn-reset" onclick="resetFilters()" class="hidden text-[10px] text-red-400 hover:text-red-300 ml-auto uppercase tracking-wide border border-red-400/30 px-3 py-1 rounded hover:bg-red-400/10 transition-colors">
-                                [X] RESET
-                            </button>
                         </div>
                     </div>
 
-                    <div class="glass-panel rounded-2xl p-6 flex-1 overflow-y-auto relative custom-scrollbar z-10" id="catalog-scroll-container">
-                        <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4"></div>
-                        
-                        <div id="load-more-container" class="py-8 flex justify-center hidden">
-                            <button onclick="loadMoreBooks()" class="group relative px-6 py-3 bg-white/5 hover:bg-cyan-500/10 border border-white/10 hover:border-cyan-400 rounded-full transition-all duration-300">
-                                <span class="text-xs font-bold text-white/60 group-hover:text-cyan-400 tracking-widest">LOAD MORE DATA</span>
-                                <div class="absolute inset-0 rounded-full border border-cyan-400 opacity-0 scale-110 group-hover:opacity-100 group-hover:scale-100 transition-all duration-500"></div>
-                            </button>
-                        </div>
+                    <div class="flex justify-between items-center mt-6 pt-4 border-t border-white/10">
+                        <button id="btn-back" class="text-xs text-white/40 hover:text-white transition-colors">
+                            < BACK
+                        </button>
+                        <button id="btn-next" class="btn-primary text-sm px-6 py-2" style="width: auto;">
+                            CONTINUE
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <button onclick="switchLoginMode('login')" class="text-[10px] text-white/30 hover:text-cyan-400 transition-colors">
+                            CANCEL_PROTOCOL // RETURN TO LOGIN
+                        </button>
                     </div>
                 </div>
+
             </div>
-        </main>
+        </div>
+    </div>
+
+    <!-- DASHBOARD PAGE -->
+    <div id="dashboard-page" class="page-view" style="padding: 2rem;">
+        <div class="w-full max-w-7xl h-full grid grid-cols-12 gap-6">
+            
+            <!-- SIDEBAR -->
+            <aside class="col-span-12 md:col-span-3 flex flex-col justify-between glass-panel rounded-2xl p-6 h-full">
+                <div>
+                    <div class="mb-12">
+                        <h1 class="text-4xl font-bold tracking-tighter leading-none mb-2">LIB<br>OS_</h1>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <span class="text-xs text-white/40 tracking-widest">SYSTEM ONLINE</span>
+                        </div>
+                    </div>
+
+                    <nav class="space-y-1">
+                        <a href="#" onclick="switchDashboardView('catalog'); return false;" id="nav-catalog" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                            <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">01</span>
+                            <span class="text-sm tracking-wide">CATALOG_SEARCH</span>
+                        </a>
+                        <a href="#" onclick="switchDashboardView('dashboard'); return false;" id="nav-dashboard" class="block px-4 py-3 rounded-lg text-cyan-400 bg-white/5 transition-all group flex items-center gap-3 border-l-2 border-cyan-400">
+                            <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">02</span>
+                            <span class="text-sm tracking-wide">MY_LOANS</span>
+                        </a>
+                        <a href="#" onclick="switchDashboardView('history'); return false;" id="nav-history" class="block px-4 py-3 rounded-lg text-white/60 hover:text-cyan-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                            <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">03</span>
+                            <span class="text-sm tracking-wide">HISTORY_LOG</span>
+                        </a>
+                        <a href="#" onclick="handleLogout()" class="block px-4 py-3 rounded-lg text-white/60 hover:text-red-400 hover:bg-white/5 transition-all group flex items-center gap-3">
+                            <span class="text-xs opacity-30 group-hover:opacity-100 font-mono">04</span>
+                            <span class="text-sm tracking-wide">LOGOUT</span>
+                        </a>
+                    </nav>
+                </div>
+                <div class="text-xs text-white/20 font-mono">v0.2 // SEAMLESS</div>
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <main class="col-span-12 md:col-span-9 h-full relative overflow-hidden">
+                <div id="dashboard-content-stack" class="relative w-full h-full">
+
+                    <!-- DASHBOARD VIEW -->
+                    <div id="view-dash-main" class="absolute inset-0 flex flex-col gap-6 transition-none">
+                        <div class="glass-panel rounded-2xl p-6 flex justify-between items-center h-24 shrink-0">
+                            <div>
+                                <h2 class="text-xl font-bold text-white tracking-tight">WELCOME BACK, <span id="user-name" class="text-cyan-400">LOADING...</span></h2>
+                                <p id="user-details" class="text-xs text-white/40 font-mono mt-1">CONNECTING...</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-white/40 font-mono mb-1">CURRENT DATE</p>
+                                <p class="text-lg font-bold tracking-widest" id="clock">00:00:00</p>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel rounded-2xl p-8 flex-1 flex flex-col relative overflow-hidden">
+                            <div class="flex justify-between items-end mb-4 relative z-20">
+                                <div>
+                                    <h3 class="text-sm text-cyan-400 tracking-widest mb-1">ACTIVE RESERVATIONS</h3>
+                                    <p class="text-xs text-white/40 max-w-md">Displaying recent active loans from database.</p>
+                                </div>
+                                <button onclick="switchDashboardView('catalog')" class="px-4 py-2 border border-white/20 rounded hover:bg-white/10 text-xs transition-colors">
+                                    BROWSE_CATALOG ->
+                                </button>
+                            </div>
+                            <div id="cards-container" class="mt-8 flex justify-center items-center"></div>
+                            <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-6 h-32 shrink-0">
+                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-purple-500">
+                                <span class="text-xs text-white/40 font-mono mb-2">TOTAL_READ</span>
+                                <div class="flex items-baseline gap-2"><span class="text-4xl font-bold" data-stat="total-read">0</span><span class="text-xs text-white/20">BOOKS</span></div>
+                            </div>
+                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-green-500">
+                                <span class="text-xs text-white/40 font-mono mb-2">ON_HAND</span>
+                                <div class="flex items-baseline gap-2"><span id="active-count" class="text-4xl font-bold" data-stat="on-hand">0</span><span class="text-xs text-white/20">ACTIVE</span></div>
+                            </div>
+                            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-center border-l-4 border-l-orange-500">
+                                <span class="text-xs text-white/40 font-mono mb-2">FAV_GENRE</span>
+                                <div class="flex items-baseline gap-2"><span class="text-2xl font-bold truncate" data-stat="fav-genre">N/A</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CATALOG VIEW -->
+                    <div id="view-dash-catalog" class="absolute inset-0 flex flex-col gap-6 opacity-0 pointer-events-none">
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-center h-48 shrink-0 gap-4 relative z-20">
+                            <div>
+                                <label class="text-xs text-cyan-400 font-mono mb-2 tracking-widest">DATABASE_QUERY</label>
+                                <div class="relative w-full">
+                                    <input type="text" id="search-input" 
+                                        class="w-full bg-transparent border-b border-white/20 py-2 text-2xl font-bold text-white focus:outline-none focus:border-cyan-400 transition-colors font-mono placeholder-white/20"
+                                        placeholder="ENTER KEYWORDS..." autocomplete="off">
+                                    <div class="absolute right-0 top-1/2 -translate-y-1/2 text-white/20 animate-pulse">_</div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-6">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[10px] text-white/30 font-mono tracking-widest uppercase">Filter:</span>
+                                    
+                                    <div class="relative group-dropdown">
+                                        <button id="btn-genre" class="dropdown-btn" onclick="toggleDropdown('genre')">
+                                            <span>GENRE</span>
+                                            <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </button>
+                                        <div id="dropdown-genre" class="dropdown-menu"></div>
+                                    </div>
+
+                                    <div class="relative group-dropdown">
+                                        <button id="btn-author" class="dropdown-btn" onclick="toggleDropdown('author')">
+                                            <span>AUTHOR</span>
+                                            <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </button>
+                                        <div id="dropdown-author" class="dropdown-menu"></div>
+                                    </div>
+                                </div>
+
+                                <div class="w-px h-6 bg-white/10"></div>
+
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[10px] text-white/30 font-mono tracking-widest uppercase">Sort:</span>
+                                    <div class="relative group-dropdown">
+                                        <button id="btn-sort" class="dropdown-btn active" onclick="toggleDropdown('sort')">
+                                            <span>DEFAULT</span>
+                                            <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </button>
+                                        <div id="dropdown-sort" class="dropdown-menu">
+                                            <div class="dropdown-item selected" onclick="applySort('default')">DEFAULT (ID)</div>
+                                            <div class="dropdown-item" onclick="applySort('asc')">TITLE (A-Z)</div>
+                                            <div class="dropdown-item" onclick="applySort('desc')">TITLE (Z-A)</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button id="btn-reset" onclick="resetFilters()" class="hidden text-[10px] text-red-400 hover:text-red-300 ml-auto uppercase tracking-wide border border-red-400/30 px-3 py-1 rounded hover:bg-red-400/10 transition-colors">
+                                    [X] RESET
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel rounded-2xl p-6 flex-1 overflow-y-auto relative custom-scrollbar z-10" id="catalog-scroll-container">
+                            <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4"></div>
+                            
+                            <div id="load-more-container" class="py-8 flex justify-center hidden">
+                                <button onclick="loadMoreBooks()" class="group relative px-6 py-3 bg-white/5 hover:bg-cyan-500/10 border border-white/10 hover:border-cyan-400 rounded-full transition-all duration-300">
+                                    <span class="text-xs font-bold text-white/60 group-hover:text-cyan-400 tracking-widest">LOAD MORE DATA</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HISTORY VIEW -->
+                    <div id="view-dash-history" class="absolute inset-0 flex flex-col gap-6 opacity-0 pointer-events-none">
+                        <div class="h-32 shrink-0 grid grid-cols-12 gap-6">
+                            <div class="col-span-4 glass-panel rounded-2xl p-6 flex flex-col justify-center">
+                                <h2 class="text-xl font-bold text-white tracking-tight mb-1">HISTORY_LOG_</h2>
+                                <p class="text-xs text-white/40 font-mono">TRACKING USER ACTIVITY</p>
+                            </div>
+
+                            <div class="col-span-8 grid grid-cols-3 gap-6">
+                                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
+                                    <span class="text-[10px] text-white/40 font-mono tracking-widest">TOP_SEARCH_GENRE</span>
+                                    <div class="text-2xl font-bold text-cyan-400" data-stat="top-genre">N/A</div>
+                                </div>
+                                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
+                                    <span class="text-[10px] text-white/40 font-mono tracking-widest">TOP_AUTHOR</span>
+                                    <div class="text-xl font-bold text-purple-400 truncate" data-stat="top-author">N/A</div>
+                                </div>
+                                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
+                                    <span class="text-[10px] text-white/40 font-mono tracking-widest">TOTAL_QUERIES</span>
+                                    <span class="text-3xl font-bold text-white" data-stat="total-queries">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel rounded-2xl flex-1 flex flex-col overflow-hidden relative">
+                            <div class="px-8 py-5 border-b border-white/10 grid grid-cols-12 text-[10px] text-white/30 font-mono tracking-widest uppercase">
+                                <div class="col-span-4">Book Details</div>
+                                <div class="col-span-2">Taken Date</div>
+                                <div class="col-span-2">Return Due</div>
+                                <div class="col-span-2">Status</div>
+                                <div class="col-span-2 text-right">Action</div>
+                            </div>
+                            <div class="overflow-y-auto custom-scrollbar flex-1 p-4 space-y-2" id="history-list-container"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+
+        </div>
     </div>
 
     <script>
-        // --- CONFIG & STATE ---
-        const storedId = localStorage.getItem('user_id');
-        const CURRENT_USER_ID = storedId ? Number(storedId) : null;
-        if (!CURRENT_USER_ID || Number.isNaN(CURRENT_USER_ID)) {
-            window.location.href = 'login.html';
+        // ============================================
+        // GLOBAL STATE
+        // ============================================
+        let CURRENT_USER_ID = null;
+        let CANVAS_MODE = 'aurora'; // 'aurora' | 'waves'
+        let canvasMorphProgress = 0; // 0 = aurora, 1 = waves
+
+        // ============================================
+        // UNIFIED CANVAS WITH MORPHING
+        // ============================================
+        const vertexShader = `
+        precision highp float;
+        void main() {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+        `;
+
+        const fragmentShader = `
+        precision highp float;
+
+        uniform float iTime;
+        uniform vec3 iResolution;
+        uniform float uMorphProgress; // 0.0 = aurora, 1.0 = waves
+        
+        // Wave params
+        uniform bool enableTop;
+        uniform bool enableMiddle;
+        uniform bool enableBottom;
+        uniform int topLineCount;
+        uniform int middleLineCount;
+        uniform int bottomLineCount;
+        uniform float topLineDistance;
+        uniform float middleLineDistance;
+        uniform float bottomLineDistance;
+        uniform vec3 topWavePosition;
+        uniform vec3 middleWavePosition;
+        uniform vec3 bottomWavePosition;
+        
+        uniform vec3 lineGradient[8];
+        uniform int lineGradientCount;
+
+        // Aurora gradient colors
+        uniform vec3 auroraStops[3];
+
+        const vec3 BLACK = vec3(0.0);
+        const vec3 PINK  = vec3(233.0, 71.0, 245.0) / 255.0;
+        const vec3 BLUE  = vec3(47.0,  75.0, 162.0) / 255.0;
+
+        mat2 rotate(float r) {
+            return mat2(cos(r), sin(r), -sin(r), cos(r));
         }
 
+        // AURORA EFFECT (simplex noise)
+        vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
+        float snoise(vec2 v) {
+            const vec4 C = vec4(0.211, 0.366, -0.577, 0.024);
+            vec2 i = floor(v + dot(v, C.yy));
+            vec2 x0 = v - i + dot(i, C.xx);
+            vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+            vec4 x12 = x0.xyxy + C.xxzz;
+            x12.xy -= i1;
+            i = mod(i, 289.0);
+            vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+            vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+            m = m * m * m * m;
+            vec3 x = 2.0 * fract(p * C.www) - 1.0;
+            vec3 h = abs(x) - 0.5;
+            vec3 ox = floor(x + 0.5);
+            vec3 a0 = x - ox;
+            m *= 1.79 - 0.85 * (a0 * a0 + h * h);
+            vec3 g;
+            g.x = a0.x * x0.x + h.x * x0.y;
+            g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+            return 130.0 * dot(m, g);
+        }
+
+        vec4 auroraEffect(vec2 uv) {
+            vec3 c1 = auroraStops[0];
+            vec3 c2 = auroraStops[1];
+            vec3 c3 = auroraStops[2];
+            vec3 ramp = mix(c1, c2, smoothstep(0.0, 0.5, uv.x));
+            ramp = mix(ramp, c3, smoothstep(0.5, 1.0, uv.x));
+            
+            float h = snoise(vec2(uv.x * 2.0 + iTime * 0.1, iTime * 0.25)) * 0.5;
+            h = exp(h);
+            h = (uv.y * 2.0 - h + 0.2);
+            float i = 0.6 * h;
+            float a = smoothstep(0.2 - 0.3, 0.2 + 0.3, i);
+            return vec4(i * ramp * a, a);
+        }
+
+        // WAVE EFFECT
+        vec3 getLineColor(float t, vec3 baseColor) {
+            if (lineGradientCount <= 0) return baseColor;
+            vec3 gradientColor;
+            if (lineGradientCount == 1) {
+                gradientColor = lineGradient[0];
+            } else {
+                float clampedT = clamp(t, 0.0, 0.9999);
+                float scaled = clampedT * float(lineGradientCount - 1);
+                int idx = int(floor(scaled));
+                float f = fract(scaled);
+                int idx2 = min(idx + 1, lineGradientCount - 1);
+                gradientColor = mix(lineGradient[idx], lineGradient[idx2], f);
+            }
+            return gradientColor * 0.5;
+        }
+
+        float wave(vec2 uv, float offset) {
+            float time = iTime;
+            float x_offset = offset;
+            float x_movement = time * 0.1;
+            float amp = sin(offset + time * 0.2) * 0.3;
+            float y = sin(uv.x + x_offset + x_movement) * amp;
+            float m = uv.y - y;
+            return 0.0175 / max(abs(m) + 0.01, 1e-3) + 0.01;
+        }
+
+        vec4 waveEffect(vec2 baseUv) {
+            vec3 col = vec3(0.0);
+            
+            if (enableBottom) {
+                for (int i = 0; i < 20; ++i) {
+                    if (i >= bottomLineCount) break;
+                    float fi = float(i);
+                    float t = fi / max(float(bottomLineCount - 1), 1.0);
+                    vec3 lineCol = getLineColor(t, vec3(0.0));
+                    
+                    float angle = bottomWavePosition.z * log(length(baseUv) + 1.0);
+                    vec2 ruv = baseUv * rotate(angle);
+                    col += lineCol * wave(
+                        ruv + vec2(bottomLineDistance * fi + bottomWavePosition.x, bottomWavePosition.y),
+                        1.5 + 0.2 * fi
+                    ) * 0.2;
+                }
+            }
+
+            if (enableMiddle) {
+                for (int i = 0; i < 20; ++i) {
+                    if (i >= middleLineCount) break;
+                    float fi = float(i);
+                    float t = fi / max(float(middleLineCount - 1), 1.0);
+                    vec3 lineCol = getLineColor(t, vec3(0.0));
+                    
+                    float angle = middleWavePosition.z * log(length(baseUv) + 1.0);
+                    vec2 ruv = baseUv * rotate(angle);
+                    col += lineCol * wave(
+                        ruv + vec2(middleLineDistance * fi + middleWavePosition.x, middleWavePosition.y),
+                        2.0 + 0.15 * fi
+                    );
+                }
+            }
+
+            if (enableTop) {
+                for (int i = 0; i < 20; ++i) {
+                    if (i >= topLineCount) break;
+                    float fi = float(i);
+                    float t = fi / max(float(topLineCount - 1), 1.0);
+                    vec3 lineCol = getLineColor(t, vec3(0.0));
+                    
+                    float angle = topWavePosition.z * log(length(baseUv) + 1.0);
+                    vec2 ruv = baseUv * rotate(angle);
+                    ruv.x *= -1.0;
+                    col += lineCol * wave(
+                        ruv + vec2(topLineDistance * fi + topWavePosition.x, topWavePosition.y),
+                        1.0 + 0.2 * fi
+                    ) * 0.1;
+                }
+            }
+
+            return vec4(col, 1.0);
+        }
+
+        void main() {
+            vec2 uv = gl_FragCoord.xy / iResolution.xy;
+            vec2 baseUv = (2.0 * gl_FragCoord.xy - iResolution.xy) / iResolution.y;
+            baseUv.y *= -1.0;
+
+            vec4 auroraCol = auroraEffect(uv);
+            vec4 waveCol = waveEffect(baseUv);
+
+            // Морфинг между эффектами
+            vec4 finalColor = mix(auroraCol, waveCol, uMorphProgress);
+            
+            gl_FragColor = finalColor;
+        }
+        `;
+
+        let canvasUniforms, canvasMesh, canvasRenderer, canvasScene, canvasCamera, canvasClock;
+
+        function initUnifiedCanvas() {
+            const canvas = document.getElementById('unified-canvas');
+            if (!canvas) return;
+
+            canvasScene = new THREE.Scene();
+            canvasCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+            canvasCamera.position.z = 1;
+
+            canvasRenderer = new THREE.WebGLRenderer({ 
+                canvas: canvas,
+                antialias: false,
+                alpha: true,
+                premultipliedAlpha: true,
+                powerPreference: "high-performance"
+            });
+            
+            canvasRenderer.setPixelRatio(1);
+            canvasRenderer.setSize(window.innerWidth, window.innerHeight);
+
+            canvasUniforms = {
+                iTime: { value: 0 },
+                iResolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
+                uMorphProgress: { value: 0 },
+                
+                // Wave params
+                enableTop: { value: true },
+                enableMiddle: { value: true },
+                enableBottom: { value: true },
+                topLineCount: { value: 6 },
+                middleLineCount: { value: 6 },
+                bottomLineCount: { value: 6 },
+                topLineDistance: { value: 0.05 },
+                middleLineDistance: { value: 0.05 },
+                bottomLineDistance: { value: 0.05 },
+                topWavePosition: { value: new THREE.Vector3(10.0, 0.5, -0.4) },
+                middleWavePosition: { value: new THREE.Vector3(5.0, 0.0, 0.2) },
+                bottomWavePosition: { value: new THREE.Vector3(2.0, -0.7, 0.4) },
+                lineGradient: { value: new Array(8).fill(0).map(() => new THREE.Vector3(1, 1, 1)) },
+                lineGradientCount: { value: 0 },
+                
+                // Aurora params
+                auroraStops: { value: [
+                    new THREE.Color('#000000'),
+                    new THREE.Color('#22d3ee'),
+                    new THREE.Color('#1a1a2e')
+                ]}
+            };
+
+            // Gradient для waves
+            const colors = ["#22d3ee", "#3b82f6"];
+            canvasUniforms.lineGradientCount.value = colors.length;
+            colors.forEach((hex, i) => {
+                const c = new THREE.Color(hex);
+                canvasUniforms.lineGradient.value[i].set(c.r, c.g, c.b);
+            });
+
+            const geometry = new THREE.PlaneGeometry(2, 2);
+            const material = new THREE.ShaderMaterial({
+                uniforms: canvasUniforms,
+                vertexShader,
+                fragmentShader,
+                transparent: true,
+                depthWrite: false,
+                depthTest: false
+            });
+            canvasMesh = new THREE.Mesh(geometry, material);
+            canvasScene.add(canvasMesh);
+
+            function resize() {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                canvasRenderer.setSize(width, height);
+                canvasUniforms.iResolution.value.set(width, height, 1);
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            canvasClock = new THREE.Clock();
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                canvasUniforms.iTime.value = canvasClock.getElapsedTime();
+                canvasUniforms.uMorphProgress.value = canvasMorphProgress;
+                canvasRenderer.render(canvasScene, canvasCamera);
+            }
+            animate();
+        }
+
+        // ============================================
+        // PAGE TRANSITION: LOGIN -> DASHBOARD
+        // ============================================
+        function transitionToDashboard() {
+            const loginPage = document.getElementById('login-page');
+            const dashPage = document.getElementById('dashboard-page');
+
+            const tl = gsap.timeline();
+
+            // Scroll effect: login уезжает вверх, dashboard приезжает снизу
+            tl.to(loginPage, {
+                y: '-100%',
+                opacity: 0,
+                duration: 1.5,
+                ease: 'power2.inOut'
+            })
+            .set(dashPage, { 
+                y: '100%',
+                opacity: 0,
+                pointerEvents: 'auto'
+            }, 0)
+            .to(dashPage, {
+                y: '0%',
+                opacity: 1,
+                duration: 1.5,
+                ease: 'power2.inOut'
+            }, 0.2)
+            .to({}, {
+                duration: 1.5,
+                onUpdate: function() {
+                    // Морфинг canvas: aurora -> waves
+                    canvasMorphProgress = this.progress();
+                }
+            }, 0);
+
+            tl.eventCallback('onComplete', () => {
+                loginPage.classList.remove('active');
+                dashPage.classList.add('active');
+                gsap.set(loginPage, { y: '0%' }); // reset
+            });
+        }
+
+        function transitionToLogin() {
+            const loginPage = document.getElementById('login-page');
+            const dashPage = document.getElementById('dashboard-page');
+
+            const tl = gsap.timeline();
+
+            // Reverse scroll: dashboard уезжает вниз, login приезжает сверху
+            tl.to(dashPage, {
+                y: '100%',
+                opacity: 0,
+                duration: 1.5,
+                ease: 'power2.inOut'
+            })
+            .set(loginPage, { 
+                y: '-100%',
+                opacity: 0,
+                pointerEvents: 'auto'
+            }, 0)
+            .to(loginPage, {
+                y: '0%',
+                opacity: 1,
+                duration: 1.5,
+                ease: 'power2.inOut'
+            }, 0.2)
+            .to({}, {
+                duration: 1.5,
+                onUpdate: function() {
+                    // Морфинг canvas: waves -> aurora
+                    canvasMorphProgress = 1 - this.progress();
+                }
+            }, 0);
+
+            tl.eventCallback('onComplete', () => {
+                dashPage.classList.remove('active');
+                loginPage.classList.add('active');
+                gsap.set(dashPage, { y: '0%' }); // reset
+            });
+        }
+
+        // ============================================
+        // LOGIN LOGIC
+        // ============================================
+        async function handleLogin() {
+            const loginInput = document.getElementById('login-email');
+            const passwordInput = document.getElementById('login-pass');
+            const email = loginInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!email || !password) {
+                shakeCard();
+                if(!email) loginInput.classList.add('error');
+                if(!password) passwordInput.classList.add('error');
+                setTimeout(() => {
+                    loginInput.classList.remove('error');
+                    passwordInput.classList.remove('error');
+                }, 1000);
+                return;
+            }
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append('username', email);
+                formData.append('password', password);
+
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const tokenData = await response.json();
+                    localStorage.setItem('access_token', tokenData.access_token);
+                    
+                    // Переход на dashboard с эффектом
+                    await fetchUserData();
+                    transitionToDashboard();
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Login failed');
+                    shakeCard();
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Network error');
+            }
+        }
+
+        function handleLogout() {
+            if (!confirm('LOG OUT FROM SYSTEM?')) return;
+            localStorage.removeItem('access_token');
+            transitionToLogin();
+        }
+
+        function shakeCard() {
+            const card = document.querySelector('#login-page .glass-panel');
+            gsap.to(card, { x: [-5, 5, -5, 5, 0], duration: 0.3, ease: "none" });
+        }
+
+        // ============================================
+        // REGISTER LOGIC (STEPPER)
+        // ============================================
+        const stepperState = { step: 1, total: 3 };
+        const stepperEls = {
+            slides: document.querySelectorAll('.step-slide'),
+            indicators: document.querySelectorAll('.step-indicator .step-circle'),
+            connector: document.getElementById('connector-fill'),
+            wrapper: document.getElementById('steps-wrapper'),
+            btnNext: document.getElementById('btn-next'),
+            btnBack: document.getElementById('btn-back')
+        };
+
+        function validateCurrentStep() {
+            const currentSlide = document.querySelector(`.step-slide[data-step="${stepperState.step}"]`);
+            const inputs = currentSlide.querySelectorAll('input');
+            let isValid = true;
+            let errorMsg = "";
+
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('error');
+                    input.addEventListener('input', () => input.classList.remove('error'), {once: true});
+                }
+            });
+
+            if (stepperState.step === 2 && isValid) {
+                const p1Input = document.getElementById('reg-pass');
+                const p2Input = document.getElementById('reg-confirm');
+                const p1 = p1Input.value;
+                const p2 = p2Input.value;
+
+                if (p1.length > 64) {
+                    isValid = false;
+                    errorMsg = "Password is too long (max 64 chars)";
+                    p1Input.classList.add('error');
+                } else if (p1.length < 8) {
+                    isValid = false;
+                    errorMsg = "Password too short (min 8 chars)";
+                    p1Input.classList.add('error');
+                } else if (p1 !== p2) {
+                    isValid = false;
+                    errorMsg = "Passwords do not match";
+                    p2Input.classList.add('error');
+                }
+            }
+
+            if (!isValid) {
+                shakeCard();
+                if (errorMsg) alert(errorMsg);
+            }
+            return isValid;
+        }
+
+        function updateSummary() {
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            document.getElementById('summary-name').innerText = name.toUpperCase();
+            document.getElementById('summary-email').innerText = email;
+        }
+
+        async function handleRegisterSubmit() {
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-pass').value.trim();
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, role_name: "user" })
+                });
+
+                if (response.ok) {
+                    const formData = new URLSearchParams();
+                    formData.append('username', email);
+                    formData.append('password', password);
+
+                    const loginResponse = await fetch('/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData
+                    });
+
+                    if (loginResponse.ok) {
+                        const tokenData = await loginResponse.json();
+                        localStorage.setItem('access_token', tokenData.access_token);
+                        
+                        await fetchUserData();
+                        transitionToDashboard();
+                    } else {
+                        alert('Registration OK but login failed. Please log in manually.');
+                    }
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Registration failed');
+                    shakeCard();
+                }
+            } catch (e) {
+                console.error('Register error:', e);
+                alert('Network error');
+            }
+        }
+
+        function updateIndicators() {
+            const progress = ((stepperState.step - 1) / (stepperState.total - 1)) * 100;
+            stepperEls.connector.style.width = `${progress}%`;
+            stepperEls.indicators.forEach((circle, idx) => {
+                const stepNum = idx + 1;
+                circle.className = 'step-circle transition-all duration-300 border';
+                circle.innerHTML = stepNum;
+                if (stepNum < stepperState.step) {
+                    circle.classList.add('bg-cyan-500', 'border-cyan-500', 'text-black', 'completed');
+                    circle.innerHTML = `<svg class="checkmark w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+                } else if (stepNum === stepperState.step) {
+                    circle.classList.add('bg-cyan-900', 'border-cyan-400', 'text-cyan-400');
+                } else {
+                    circle.classList.add('bg-gray-900', 'border-white/10', 'text-white/30');
+                }
+            });
+        }
+
+        function goToStep(newStep) {
+            const direction = newStep > stepperState.step ? 1 : -1;
+            const currentSlide = document.querySelector(`.step-slide[data-step="${stepperState.step}"]`);
+            const nextSlide = document.querySelector(`.step-slide[data-step="${newStep}"]`);
+
+            if (!currentSlide || !nextSlide) return;
+
+            if (newStep === 3) updateSummary();
+
+            gsap.set(nextSlide, { autoAlpha: 1, position: 'absolute', zIndex: 10 });
+
+            gsap.to(currentSlide, { 
+                x: direction > 0 ? '-100%' : '100%', autoAlpha: 0, duration: 0.4, ease: "power2.inOut",
+                onComplete: () => gsap.set(currentSlide, { x: 0 })
+            });
+
+            gsap.fromTo(nextSlide, 
+                { x: direction > 0 ? '100%' : '-100%', autoAlpha: 0 }, 
+                { x: '0%', autoAlpha: 1, duration: 0.4, ease: "power2.inOut", onComplete: () => gsap.set(nextSlide, { zIndex: 1 }) }
+            );
+
+            if (newStep === 1) stepperEls.btnBack.style.opacity = '0.3';
+            else stepperEls.btnBack.style.opacity = '1';
+
+            stepperEls.btnNext.innerText = newStep === stepperState.total ? 'CONFIRM & JOIN' : 'CONTINUE';
+            
+            stepperState.step = newStep;
+            updateIndicators();
+        }
+
+        stepperEls.btnNext.addEventListener('click', () => {
+            if (!validateCurrentStep()) return;
+
+            if (stepperState.step < stepperState.total) {
+                goToStep(stepperState.step + 1);
+            } else {
+                handleRegisterSubmit();
+            }
+        });
+
+        stepperEls.btnBack.addEventListener('click', () => {
+            if (stepperState.step > 1) goToStep(stepperState.step - 1);
+        });
+
+        function switchLoginMode(mode) {
+            const loginView = document.getElementById('view-login');
+            const registerView = document.getElementById('view-register');
+            const headerTitle = document.getElementById('login-header-title');
+            const headerSub = document.getElementById('login-header-subtitle');
+            
+            const tl = gsap.timeline();
+
+            if (mode === 'register') {
+                tl.to(loginView, { x: '-110%', opacity: 0, duration: 0.4, ease: "power2.inOut" })
+                  .set(registerView, { pointerEvents: 'auto' }, "<")
+                  .to(registerView, { x: '0%', opacity: 1, duration: 0.4, ease: "power2.inOut" }, "-=0.3");
+
+                headerTitle.innerText = "ACCESS_PROTOCOL";
+                headerSub.innerText = "ESTABLISHING NEW CONNECTION";
+
+            } else {
+                tl.to(registerView, { x: '110%', opacity: 0, duration: 0.4, ease: "power2.inOut" })
+                  .set(registerView, { pointerEvents: 'none' })
+                  .to(loginView, { x: '0%', opacity: 1, duration: 0.4, ease: "power2.inOut" }, "-=0.3");
+
+                headerTitle.innerText = "SYSTEM_GATEWAY";
+                headerSub.innerText = "AUTHENTICATION REQUIRED";
+            }
+        }
+
+        // ============================================
+        // DASHBOARD LOGIC
+        // ============================================
         const DOM = {
-            views: { dashboard: document.getElementById('view-dashboard'), catalog: document.getElementById('view-catalog') },
-            navs: { dashboard: document.getElementById('nav-dashboard'), catalog: document.getElementById('nav-catalog') },
+            views: {
+                dashboard: document.getElementById('view-dash-main'),
+                catalog: document.getElementById('view-dash-catalog'),
+                history: document.getElementById('view-dash-history')
+            },
+            navs: {
+                dashboard: document.getElementById('nav-dashboard'),
+                catalog: document.getElementById('nav-catalog'),
+                history: document.getElementById('nav-history')
+            },
             grid: document.getElementById('catalog-grid'),
             loadMoreBtn: document.getElementById('load-more-container'),
             scrollContainer: document.getElementById('catalog-scroll-container'),
             activeCount: document.getElementById('active-count'),
             userName: document.getElementById('user-name'),
-            userDetails: document.getElementById('user-details')
+            userDetails: document.getElementById('user-details'),
+            historyList: document.getElementById('history-list-container')
         };
 
-        const activeClass = "text-cyan-400 bg-white/5 border-l-2 border-cyan-400 font-bold";
-        const inactiveClass = "text-white/60 hover:text-cyan-400 hover:bg-white/5";
-
-        // Catalog State
         let catalogState = {
             books: [],
             totalItems: 0,
             skip: 0,
-            limit: 8, // Соответствует бэкенду
+            limit: 8,
             isLoading: false,
-            // Filters
             genreId: null,
             authorId: null,
             search: "",
-            sort: null 
+            sort: null
         };
 
         let isCatalogInitialized = false;
 
-        // --- 1. USER & DASHBOARD DATA ---
+        async function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('access_token');
+            if (!token) return null;
+            
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                transitionToLogin();
+                return null;
+            }
+
+            return response;
+        }
+
         async function fetchUserData() {
             try {
-                const storedName = localStorage.getItem('user_name');
-                if (storedName) DOM.userName.textContent = storedName.toUpperCase();
-                
-                const userRes = await fetch(`/api/users/${CURRENT_USER_ID}`);
-                if (!userRes.ok) throw new Error('User fetch failed');
+                const userRes = await apiFetch('/api/me');
+                if (!userRes || !userRes.ok) throw new Error('User fetch failed');
                 const user = await userRes.json();
                 
+                CURRENT_USER_ID = user.id;
                 DOM.userName.textContent = user.name.toUpperCase();
                 const roleName = user.role ? user.role.name : "UNKNOWN";
                 DOM.userDetails.textContent = `ROLE: ${roleName.toUpperCase()} // ID: #${user.id}`;
 
-                const resRes = await fetch(`/api/users/${CURRENT_USER_ID}/reservations/`);
-                if (!resRes.ok) throw new Error('Reservations fetch failed');
+                const resRes = await apiFetch(`/api/users/${CURRENT_USER_ID}/reservations/`);
+                if (!resRes || !resRes.ok) throw new Error('Reservations fetch failed');
                 const reservations = await resRes.json();
                 
+                const statsRes = await apiFetch(`/api/users/${CURRENT_USER_ID}/analytics/`);
+                if (statsRes && statsRes.ok) {
+                    const stats = await statsRes.json();
+                    
+                    const dashboardView = document.getElementById('view-dash-main');
+                    const totalReadEl = dashboardView.querySelector('[data-stat="total-read"]');
+                    const onHandEl = dashboardView.querySelector('[data-stat="on-hand"]');
+                    const favGenreEl = dashboardView.querySelector('[data-stat="fav-genre"]');
+                    
+                    if (totalReadEl) totalReadEl.textContent = stats.total_read || "0";
+                    if (onHandEl) onHandEl.textContent = stats.on_hand || "0";
+                    if (favGenreEl) favGenreEl.textContent = stats.fav_genre || "N/A";
+                }
+
                 DOM.activeCount.textContent = reservations.length.toString().padStart(2, '0');
                 
                 initCards(reservations.map(r => ({
@@ -329,7 +1202,7 @@
                     author: r.book.author.name,
                     genre: r.book.genre.name,
                     date: r.return_date || "NO DATE",
-                    status: "ACTIVE"
+                    status: r.status
                 })));
 
             } catch (e) {
@@ -338,7 +1211,6 @@
             }
         }
 
-        // --- 2. CATALOG DATA (SERVER SIDE) ---
         async function fetchBooks(reset = false) {
             if (catalogState.isLoading) return;
             catalogState.isLoading = true;
@@ -350,45 +1222,38 @@
             }
 
             try {
-                // СТРОИМ API ЗАПРОС
                 const params = new URLSearchParams({
                     skip: catalogState.skip,
                     limit: catalogState.limit
                 });
                 
-                // Добавляем фильтры, если они выбраны
                 if (catalogState.genreId) params.append('genre_id', catalogState.genreId);
                 if (catalogState.authorId) params.append('author_id', catalogState.authorId);
-                if (catalogState.search) params.append('search', catalogState.search); // Теперь бэк это поймет
+                if (catalogState.search) params.append('search', catalogState.search);
                 if (catalogState.sort && catalogState.sort !== 'default') params.append('sort', catalogState.sort);
 
-                const response = await fetch(`/api/books/?${params}`);
-                if (!response.ok) throw new Error('Books fetch failed');
+                const response = await apiFetch(`/api/books/?${params}`);
+                if (!response || !response.ok) throw new Error('Books fetch failed');
                 
-                const data = await response.json(); 
+                const data = await response.json();
                 
                 catalogState.totalItems = data.total_items;
                 
-                // Обработка картинок (если путь относительный, добавляем префикс)
-                // Важно: твой бэк отдает /dataset/Medical/..., убедись что слэши верные
                 const newBooks = data.items.map(b => ({
                     ...b,
                     image: b.cover_path ? `/${b.cover_path}` : `https://picsum.photos/id/${b.id % 50 + 10}/300/450?grayscale`
                 }));
 
-                // БОЛЬШЕ НИКАКОЙ JS ФИЛЬТРАЦИИ! Просто добавляем то, что прислал сервер.
                 catalogState.books = [...catalogState.books, ...newBooks];
                 
                 renderBatch(newBooks);
 
-                // Проверка кнопки Load More (сравниваем с totalItems от сервера)
                 if (catalogState.skip + newBooks.length >= catalogState.totalItems) {
                     DOM.loadMoreBtn.classList.add('hidden');
                 } else {
                     DOM.loadMoreBtn.classList.remove('hidden');
                 }
 
-                // Увеличиваем skip ТОЛЬКО на количество реально загруженных книг
                 catalogState.skip += newBooks.length;
 
             } catch (e) {
@@ -417,6 +1282,16 @@
                 const genre = book.genre?.name || "OTHER";
                 const author = book.author?.name || "Unknown Author";
 
+                const isAvailable = book.count > 0;
+                
+                const dotColor = isAvailable 
+                    ? "bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]" 
+                    : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]";
+
+                const btnHtml = isAvailable
+                    ? `<button onclick="alert('Reservation modal not implemented in SPA demo')" class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">RESERVE_</button>`
+                    : `<button disabled class="mt-2 w-full py-2 bg-white/5 border border-white/5 text-xs font-bold text-white/20 tracking-widest opacity-0 group-hover:opacity-100 cursor-not-allowed rounded">OUT_OF_STOCK</button>`;
+
                 card.innerHTML = `
                     <img src="${book.image}" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-500">
                     <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80"></div>
@@ -424,9 +1299,9 @@
                         <span class="text-[10px] font-bold text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded w-fit backdrop-blur-sm border border-cyan-400/20">${genre.toUpperCase()}</span>
                         <h4 class="text-white font-bold leading-tight drop-shadow-md line-clamp-2">${book.title}</h4>
                         <p class="text-xs text-white/50 font-mono line-clamp-1">${author}</p>
-                        <button class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">RESERVE_</button>
+                        ${btnHtml}
                     </div>
-                    <div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+                    <div class="absolute top-3 right-3 w-2 h-2 rounded-full ${dotColor}"></div>
                 `;
                 
                 setTimeout(() => card.classList.remove('opacity-0', 'translate-y-4'), 50 + (index * 30));
@@ -435,7 +1310,6 @@
             DOM.grid.appendChild(fragment);
         }
 
-        // --- 3. FILTERS LOGIC ---
         async function initDropdowns() {
             const gRes = await fetch('/api/genres/');
             const genres = await gRes.json();
@@ -488,13 +1362,10 @@
             if (id) btn.classList.add('active');
             else btn.classList.remove('active');
 
-            // Обновляем стейт
             if (type === 'genre') catalogState.genreId = id;
             if (type === 'author') catalogState.authorId = id;
 
             checkResetButton();
-            
-            // Перезагружаем книги с флагом reset=true
             fetchBooks(true);
         }
 
@@ -530,11 +1401,9 @@
             
             document.getElementById('search-input').value = '';
             
-            // Сброс UI
             applyFilter('genre', null, 'GENRE');
             applyFilter('author', null, 'AUTHOR');
             
-            // Сброс сортировки (вручную, чтобы не вызывать fetch дважды)
             catalogState.sort = null;
             document.querySelector('#btn-sort span').innerText = 'DEFAULT';
             document.getElementById('btn-sort').classList.remove('active');
@@ -547,57 +1416,36 @@
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 catalogState.search = e.target.value;
-                // Теперь это работает, т.к. бэк поддерживает параметр search
-                fetchBooks(true); 
+                fetchBooks(true);
             }, 500);
         });
 
-        // --- 4. NAVIGATION & INIT ---
-        function switchView(target) {
-            const isCatalogTarget = target === 'catalog';
-            if (isCatalogTarget && DOM.views.catalog.style.opacity === '1') return;
-            if (!isCatalogTarget && DOM.views.dashboard.style.opacity === '1') return;
+        function switchDashboardView(viewName) {
+            const activeView = DOM.views[viewName];
+            const otherViews = Object.values(DOM.views).filter(v => v !== activeView);
 
-            if (isCatalogTarget && !isCatalogInitialized) {
-                fetchBooks(true); 
+            gsap.to(otherViews, { opacity: 0, pointerEvents: 'none', duration: 0.3 });
+            gsap.to(activeView, { opacity: 1, pointerEvents: 'auto', duration: 0.3, delay: 0.1 });
+
+            Object.values(DOM.navs).forEach(el => {
+                el.classList.remove('text-cyan-400', 'bg-white/5', 'border-l-2', 'border-cyan-400', 'font-bold');
+                el.classList.add('text-white/60');
+            });
+
+            const activeNav = DOM.navs[viewName];
+            if (activeNav) {
+                activeNav.classList.remove('text-white/60');
+                activeNav.classList.add('text-cyan-400', 'bg-white/5', 'border-l-2', 'border-cyan-400', 'font-bold');
+            }
+
+            if (viewName === 'catalog' && !isCatalogInitialized) {
+                fetchBooks(true);
                 initDropdowns();
                 isCatalogInitialized = true;
             }
-
-            const tl = gsap.timeline({ defaults: { duration: 0.4, ease: "power2.inOut" } });
-
-            if (isCatalogTarget) {
-                DOM.views.catalog.classList.remove('pointer-events-none');
-                DOM.views.catalog.classList.add('pointer-events-auto');
-                DOM.views.dashboard.classList.remove('pointer-events-auto');
-                DOM.views.dashboard.classList.add('pointer-events-none');
-
-                tl.to(DOM.views.dashboard, { autoAlpha: 0, scale: 0.98 })
-                .fromTo(DOM.views.catalog, { autoAlpha: 0, scale: 1.02 }, { autoAlpha: 1, scale: 1 }, "-=0.2");
-            } else {
-                DOM.views.dashboard.classList.remove('pointer-events-none');
-                DOM.views.dashboard.classList.add('pointer-events-auto');
-                DOM.views.catalog.classList.remove('pointer-events-auto');
-                DOM.views.catalog.classList.add('pointer-events-none');
-
-                tl.to(DOM.views.catalog, { autoAlpha: 0, scale: 0.98 })
-                .fromTo(DOM.views.dashboard, { autoAlpha: 0, scale: 1.02 }, { autoAlpha: 1, scale: 1 }, "-=0.2");
-            }
-            updateNav(target);
+            if (viewName === 'history') fetchHistory();
         }
 
-        function updateNav(active) {
-            if (active === 'catalog') {
-                DOM.navs.catalog.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${activeClass}`;
-                DOM.navs.dashboard.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${inactiveClass}`;
-            } else {
-                DOM.navs.dashboard.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${activeClass}`;
-                DOM.navs.catalog.className = `block px-4 py-3 rounded-lg transition-all group flex items-center gap-3 ${inactiveClass}`;
-            }
-        }
-        
-        // Bounce Cards & Clock logic (без изменений) ... 
-        // ... сюда вставь старую функцию initCards и код часов ...
         const transformStyles = ['rotate(10deg) translate(-170px)', 'rotate(5deg) translate(-85px)', 'rotate(0deg) translate(0px)', 'rotate(-5deg) translate(85px)', 'rotate(-10deg) translate(170px)'];
         const getNoRotationTransform = t => t.includes('rotate') ? t.replace(/rotate\([\s\S]*?\)/, 'rotate(0deg)') : `${t} rotate(0deg)`;
         const getPushedTransform = (t, x) => t.match(/translate\(([-0-9.]+)px\)/) ? t.replace(/translate\(([-0-9.]+)px\)/, `translate(${parseFloat(t.match(/translate\(([-0-9.]+)px\)/)[1]) + x}px)`) : `${t} translate(${x}px)`;
@@ -605,14 +1453,15 @@
         function initCards(loans) {
             const container = document.getElementById('cards-container');
             container.innerHTML = '';
+            
             loans.forEach((book, i) => {
                 if (i >= 5) return;
                 const el = document.createElement('div');
                 el.className = `ticket-card card-${i}`;
                 el.style.transform = transformStyles[i];
                 el.style.zIndex = loans.length - i;
-                const statusColor = book.status === 'OVERDUE' ? 'text-red-500 animate-pulse' : 'text-green-400';
-                const dotColor = book.status === 'OVERDUE' ? 'bg-red-500' : 'bg-green-500';
+                const statusColor = book.status === 'overdue' ? 'text-red-500 animate-pulse' : 'text-green-400';
+                const dotColor = book.status === 'overdue' ? 'bg-red-500' : 'bg-green-500';
                 el.innerHTML = `<div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #22d3ee; box-shadow: 0 0 10px #22d3ee;"></div><div class="mt-2 flex justify-between items-start"><span class="text-[9px] font-bold border border-white/10 px-1.5 py-0.5 rounded text-white/60 tracking-wider bg-black/20">${(book.genre||'GENRE').toUpperCase()}</span><div class="w-1.5 h-1.5 rounded-full ${dotColor}"></div></div><div class="flex flex-col justify-center flex-grow"><h4 class="text-xl font-bold leading-tight text-white mb-1">${book.title}</h4><p class="text-[11px] text-white/40 font-mono">${book.author}</p></div><div class="border-t border-white/10 pt-3 flex justify-between items-end"><div><span class="block text-[8px] text-white/20 font-mono mb-0.5">RETURN BY</span><span class="text-xs font-mono font-bold ${statusColor}">${book.date}</span></div><span class="text-[9px] text-white/10 font-mono">#0${i + 1}</span></div>`;
                 el.addEventListener('mouseenter', () => {
                     loans.forEach((_, idx) => {
@@ -640,20 +1489,117 @@
             });
         }
 
-        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString('ru-RU'), 1000);
-        document.addEventListener('DOMContentLoaded', fetchUserData);
-    </script>
+        async function fetchHistory() {
+            DOM.historyList.innerHTML = '<div class="text-center text-white/20 py-10 font-mono animate-pulse">LOADING_LOGS...</div>';
+            
+            try {
+                const res = await apiFetch(`/api/users/${CURRENT_USER_ID}/history/`);
+                let reservations = [];
+                if(res && res.ok) reservations = await res.json();
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-        const configWave={waveSpeed:0.05,waveFrequency:3,waveAmplitude:0.3,waveColor:new THREE.Color(0.85,0.85,0.9),colorNum:4.0,pixelSize:2.0,mouseRadius:0.35};
-        const waveVertexShader=`precision highp float;varying vec2 vUv;void main(){vUv=uv;vec4 modelPosition=modelMatrix*vec4(position,1.0);vec4 viewPosition=viewMatrix*modelPosition;gl_Position=projectionMatrix*viewPosition;}`;
-        const waveFragmentShader=`precision highp float;uniform vec2 resolution;uniform float time;uniform float waveSpeed;uniform float waveFrequency;uniform float waveAmplitude;uniform vec3 waveColor;uniform vec2 mousePos;uniform int enableMouseInteraction;uniform float mouseRadius;vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}vec2 fade(vec2 t){return t*t*t*(t*(t*6.0-15.0)+10.0);}float cnoise(vec2 P){vec4 Pi=floor(P.xyxy)+vec4(0.0,0.0,1.0,1.0);vec4 Pf=fract(P.xyxy)-vec4(0.0,0.0,1.0,1.0);Pi=mod289(Pi);vec4 ix=Pi.xzxz;vec4 iy=Pi.yyww;vec4 fx=Pf.xzxz;vec4 fy=Pf.yyww;vec4 i=permute(permute(ix)+iy);vec4 gx=fract(i*(1.0/41.0))*2.0-1.0;vec4 gy=abs(gx)-0.5;vec4 tx=floor(gx+0.5);gx=gx-tx;vec2 g00=vec2(gx.x,gy.x);vec2 g10=vec2(gx.y,gy.y);vec2 g01=vec2(gx.z,gy.z);vec2 g11=vec2(gx.w,gy.w);vec4 norm=taylorInvSqrt(vec4(dot(g00,g00),dot(g01,g01),dot(g10,g10),dot(g11,g11)));g00*=norm.x;g01*=norm.y;g10*=norm.z;g11*=norm.w;float n00=dot(g00,vec2(fx.x,fy.x));float n10=dot(g10,vec2(fx.y,fy.y));float n01=dot(g01,vec2(fx.z,fy.z));float n11=dot(g11,vec2(fx.w,fy.w));vec2 fade_xy=fade(Pf.xy);vec2 n_x=mix(vec2(n00,n01),vec2(n10,n11),fade_xy.x);return 2.3*mix(n_x.x,n_x.y,fade_xy.y);}const int OCTAVES=4;float fbm(vec2 p){float value=0.0;float amp=1.0;float freq=waveFrequency;for(int i=0;i<OCTAVES;i++){value+=amp*abs(cnoise(p));p*=freq;amp*=waveAmplitude;}return value;}float pattern(vec2 p){vec2 p2=p-time*waveSpeed;return fbm(p+fbm(p2));}void main(){vec2 uv=gl_FragCoord.xy/resolution.xy;uv-=0.5;uv.x*=resolution.x/resolution.y;float f=pattern(uv);if(enableMouseInteraction==1){vec2 mouseNDC=(mousePos/resolution-0.5)*vec2(1.0,-1.0);mouseNDC.x*=resolution.x/resolution.y;float dist=length(uv-mouseNDC);float effect=1.0-smoothstep(0.0,mouseRadius,dist);f-=0.15*effect;}vec3 col=mix(vec3(0.0),waveColor,f);gl_FragColor=vec4(col,1.0);}`;
-        const ditherFragmentShader=`precision highp float;uniform float colorNum;uniform float pixelSize;uniform vec2 resolution;uniform sampler2D tDiffuse;varying vec2 vUv;const float bayerMatrix8x8[64]=float[64](0.0/64.0,48.0/64.0,12.0/64.0,60.0/64.0,3.0/64.0,51.0/64.0,15.0/64.0,63.0/64.0,32.0/64.0,16.0/64.0,44.0/64.0,28.0/64.0,35.0/64.0,19.0/64.0,47.0/64.0,31.0/64.0,8.0/64.0,56.0/64.0,4.0/64.0,52.0/64.0,11.0/64.0,59.0/64.0,7.0/64.0,55.0/64.0,40.0/64.0,24.0/64.0,36.0/64.0,20.0/64.0,43.0/64.0,27.0/64.0,39.0/64.0,23.0/64.0,2.0/64.0,50.0/64.0,14.0/64.0,62.0/64.0,1.0/64.0,49.0/64.0,13.0/64.0,61.0/64.0,34.0/64.0,18.0/64.0,46.0/64.0,30.0/64.0,33.0/64.0,17.0/64.0,45.0/64.0,29.0/64.0,10.0/64.0,58.0/64.0,6.0/64.0,54.0/64.0,9.0/64.0,57.0/64.0,5.0/64.0,53.0/64.0,42.0/64.0,26.0/64.0,38.0/64.0,22.0/64.0,41.0/64.0,25.0/64.0,37.0/64.0,21.0/64.0);vec3 dither(vec2 uv,vec3 color){vec2 scaledCoord=floor(uv*resolution/pixelSize);int x=int(mod(scaledCoord.x,8.0));int y=int(mod(scaledCoord.y,8.0));float threshold=bayerMatrix8x8[y*8+x]-0.25;float step=1.0/(colorNum-1.0);color+=threshold*step;float bias=0.2;color=clamp(color-bias,0.0,1.0);return floor(color*(colorNum-1.0)+0.5)/(colorNum-1.0);}void main(){vec4 color=texture2D(tDiffuse,vUv);color.rgb=dither(vUv,color.rgb);gl_FragColor=color;}`;
-        const canvas=document.querySelector('#canvas-container');const renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:"high-performance"});renderer.setPixelRatio(1);renderer.setSize(window.innerWidth,window.innerHeight);const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);camera.position.z=6;const waveUniforms={time:{value:0},resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)},waveSpeed:{value:configWave.waveSpeed},waveFrequency:{value:configWave.waveFrequency},waveAmplitude:{value:configWave.waveAmplitude},waveColor:{value:configWave.waveColor},mousePos:{value:new THREE.Vector2(0,0)},enableMouseInteraction:{value:1},mouseRadius:{value:configWave.mouseRadius}};const planeGeo=new THREE.PlaneGeometry(50,50);const waveMat=new THREE.ShaderMaterial({vertexShader:waveVertexShader,fragmentShader:waveFragmentShader,uniforms:waveUniforms});const plane=new THREE.Mesh(planeGeo,waveMat);scene.add(plane);const composer=new EffectComposer(renderer);const renderPass=new RenderPass(scene,camera);composer.addPass(renderPass);const ditherPass=new ShaderPass({uniforms:{tDiffuse:{value:null},colorNum:{value:configWave.colorNum},pixelSize:{value:configWave.pixelSize},resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)}},vertexShader:waveVertexShader,fragmentShader:ditherFragmentShader});composer.addPass(ditherPass);window.addEventListener('resize',()=>{const width=window.innerWidth;const height=window.innerHeight;renderer.setSize(width,height);composer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();waveUniforms.resolution.value.set(width,height);ditherPass.uniforms.resolution.value.set(width,height);});window.addEventListener('mousemove',(e)=>{waveUniforms.mousePos.value.set(e.clientX,e.clientY);});const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);waveUniforms.time.value=clock.getElapsedTime();composer.render();}animate();
+                const statsRes = await apiFetch(`/api/users/${CURRENT_USER_ID}/analytics/`);
+                let stats = {};
+                if(statsRes && statsRes.ok) stats = await statsRes.json();
+
+                renderHistoryRows(reservations);
+                updateHistoryStats(stats);
+            } catch (e) {
+                console.error("History error", e);
+            }
+        }
+
+        function renderHistoryRows(items) {
+            if(items.length === 0) {
+                DOM.historyList.innerHTML = '<div class="text-center text-white/20 py-10 font-mono">NO RECORDS FOUND</div>';
+                return;
+            }
+
+            let html = '';
+            items.forEach(item => {
+                let statusStyle = "";
+                let actionBtn = "";
+                
+                if(item.status === 'overdue') {
+                    statusStyle = "text-red-400 bg-red-400/10 border border-red-400/20";
+                    actionBtn = `<button onclick="returnBook(${item.id})" class="px-3 py-1.5 rounded text-[10px] font-bold bg-red-500/80 text-white border border-red-500 hover:bg-red-500/20 hover:text-red-400 transition-all uppercase tracking-wider">Return_</button>`;
+                } else if(item.status === 'active') {
+                    statusStyle = "text-green-400 bg-green-400/10 border border-green-400/20";
+                    actionBtn = `<button onclick="returnBook(${item.id})" class="px-3 py-1.5 rounded text-[10px] font-bold border border-white/20 hover:bg-cyan-400 hover:text-black hover:border-cyan-400 transition-all uppercase tracking-wider">Return_</button>`;
+                } else {
+                    statusStyle = "text-white/40 bg-white/5 border border-white/10";
+                    actionBtn = `<span class="text-[10px] text-white/20 font-mono">ARCHIVED</span>`;
+                }
+
+                const dateTaken = new Date(item.reserve_date).toLocaleDateString();
+                const dateReturn = new Date(item.return_date).toLocaleDateString();
+
+                html += `
+                <div class="grid grid-cols-12 items-center px-4 py-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 group">
+                    <div class="col-span-4 flex flex-col">
+                        <span class="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors truncate pr-4">${item.book.title}</span>
+                        <span class="text-xs text-white/40 font-mono">${item.book.author.name}</span>
+                    </div>
+                    <div class="col-span-2 text-xs text-white/60 font-mono">${dateTaken}</div>
+                    <div class="col-span-2 text-xs text-white/60 font-mono">${dateReturn}</div>
+                    <div class="col-span-2">
+                        <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${statusStyle}">${item.status}</span>
+                    </div>
+                    <div class="col-span-2 text-right">${actionBtn}</div>
+                </div>`;
+            });
+            DOM.historyList.innerHTML = html;
+        }
+
+        function updateHistoryStats(stats) {
+            const historyView = document.getElementById('view-dash-history');
+            
+            const topGenreEl = historyView.querySelector('[data-stat="top-genre"]');
+            if (topGenreEl) topGenreEl.textContent = stats.top_genre || "N/A";
+            
+            const topAuthorEl = historyView.querySelector('[data-stat="top-author"]');
+            if (topAuthorEl) topAuthorEl.textContent = stats.top_author || "N/A";
+            
+            const totalQueriesEl = historyView.querySelector('[data-stat="total-queries"]');
+            if (totalQueriesEl) totalQueriesEl.textContent = stats.total_queries || "0";
+        }
+
+        async function returnBook(reservationId) {
+            if(!confirm("CONFIRM RETURN?")) return;
+            try {
+                const res = await apiFetch(`/api/reservations/${reservationId}/return`, { method: 'PATCH' });
+                if(res.ok) {
+                    fetchHistory();
+                    fetchUserData();
+                } else {
+                    alert("SYSTEM ERROR: Cannot process return.");
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        setInterval(() => {
+            const clockEl = document.getElementById('clock');
+            if(clockEl) clockEl.innerText = new Date().toLocaleTimeString('ru-RU');
+        }, 1000);
+
+        // ============================================
+        // INIT
+        // ============================================
+        window.addEventListener('DOMContentLoaded', () => {
+            initUnifiedCanvas();
+
+            // Check if logged in
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                // Auto-login: show dashboard
+                fetchUserData();
+                transitionToDashboard();
+            } else {
+                // Show login page
+                document.getElementById('login-page').classList.add('active');
+            }
+        });
     </script>
 </body>
 </html>

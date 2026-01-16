@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Annotated
-from datetime import datetime, date
+from datetime import date
 from sqlalchemy import String, Integer, ForeignKey, DateTime, Date, Enum as SQLEnum, func, MetaData, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import enum
@@ -52,6 +52,7 @@ class User(Base):
 
     role: Mapped[Role] = relationship(back_populates="users")
     reservations: Mapped[list["Reservation"]] = relationship(back_populates="user")
+    search_events: Mapped[list["SearchEvents"]] = relationship(back_populates="user")
 
 
 class Genre(Base):
@@ -62,6 +63,7 @@ class Genre(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
 
     books: Mapped[list["Book"]] = relationship(back_populates="genre")
+    search_events: Mapped[list["SearchEvents"]] = relationship(back_populates="genre")
 
 
 class Author(Base):
@@ -74,6 +76,7 @@ class Author(Base):
     nationality: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     books: Mapped[list["Book"]] = relationship(back_populates="author")
+    search_events: Mapped[list["SearchEvents"]] = relationship(back_populates="author")
 
 
 class Book(Base):
@@ -115,3 +118,18 @@ class Reservation(Base):
 
     book: Mapped[Book] = relationship(back_populates="reservations")
     user: Mapped[User] = relationship(back_populates="reservations")
+
+class SearchEvents(Base):
+    "History logging for stats"
+    __tablename__ = "search_events"
+
+    id: Mapped[intpk]
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    genre_id: Mapped[int] = mapped_column(ForeignKey("genres.id", ondelete="SET NULL"), nullable=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("authors.id", ondelete="CASCADE"), nullable=True)
+    query_text: Mapped[str | None] = mapped_column(String(511), nullable=True)
+    created_at: Mapped[date] = mapped_column(Date, nullable=False, server_default=text("TIMEZONE('utc', now())"))
+
+    user: Mapped[User] = relationship(back_populates="search_events")
+    genre: Mapped[Genre | None] = relationship(back_populates="search_events")
+    author: Mapped[Author | None] = relationship(back_populates="search_events")

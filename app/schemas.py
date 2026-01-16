@@ -62,11 +62,39 @@ class Reservation(BaseModel):
     class Config:
         from_attributes = True
 
-class UserLogin(BaseModel):
-    login: str
-    password: str
-
 class UserRegister(BaseModel):
     name: str
     email: str
     password: str = Field(..., min_length=8, max_length=64)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+    class Config:
+        from_attributes = True
+
+class TokenData(BaseModel):
+    user_id: int
+
+    class Config:
+        from_attributes = True
+
+class ReservationCreate(BaseModel):
+    user_id: int
+    book_id: int
+    return_date: date
+
+    class Config:
+        from_attributes = True
+
+class Statistics(BaseModel):
+    top_author: str
+    top_genre: str
+    total_queries: int
+    total_read: int
+    on_hand: int
+    fav_genre: str
+
+    class Config:
+            from_attributes = True
