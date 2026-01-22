@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: smartlibrary
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql+psycopg://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}?sslmode=require
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: CLOUD_NAME
+        value: ${CLOUD_NAME}
+      - key: API_KEY_CLOUDINARY
+        value: ${API_KEY_CLOUDINARY}
+      - key: API_SECRET_CLOUDINARY
+        value: ${API_SECRET_CLOUDINARY}
+      - key: APP_DATABASE_URL
+        value: postgresql+psycopg://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}?sslmode=require
