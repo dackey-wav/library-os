@@ -26,7 +26,6 @@
             height: 100vh;
         }
         
-        /* UNIFIED CANVAS */
         #unified-canvas {
             position: fixed;
             top: 0;
@@ -36,7 +35,6 @@
             z-index: 0;
         }
 
-        /* PAGE VIEWS */
         .page-view {
             position: fixed;
             top: 0;
@@ -50,6 +48,7 @@
             opacity: 0;
             pointer-events: none;
             transition: none;
+            will-change: transform, opacity;
         }
 
         .page-view.active {
@@ -57,15 +56,11 @@
             pointer-events: auto;
         }
 
-        /* GLASS PANELS */
         .glass-panel {
-            background: rgba(10, 10, 12, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(10, 10, 12, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        /* LOGIN PAGE STYLES */
         .cyber-input {
             width: 100%; background: transparent; border: none;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -91,7 +86,6 @@
             opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none;
         }
 
-        /* STEPPER */
         .step-circle {
             width: 2.5rem; height: 2.5rem; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -114,7 +108,6 @@
             opacity: 1; visibility: visible; position: relative;
         }
 
-        /* DASHBOARD STYLES */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
@@ -126,13 +119,13 @@
 
         .ticket-card {
             position: absolute; width: 220px; height: 240px;
-            background: rgba(18, 18, 23, 0.8);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            background: rgba(18, 18, 23, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 20px;
             display: flex; flex-direction: column; justify-content: space-between;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); cursor: pointer; overflow: hidden;
             transform-origin: center center; will-change: transform;
             transform: translateZ(0);
+            contain: layout style paint;
         }
 
         .ticket-card.is-hovered { z-index: 50 !important; }
@@ -142,7 +135,10 @@
             pointer-events: none;
         }
 
-        .catalog-card { will-change: transform, opacity; }
+        .catalog-card { 
+            will-change: transform, opacity; 
+            contain: layout style paint;
+        }
 
         .dropdown-btn {
             display: flex; align-items: center; gap: 8px; padding: 6px 12px;
@@ -156,7 +152,7 @@
         }
         .dropdown-menu {
             position: absolute; top: 100%; left: 0; margin-top: 8px; width: 200px; max-height: 240px;
-            overflow-y: auto; background: rgba(10, 10, 15, 0.95);
+            overflow-y: auto; background: rgba(10, 10, 15, 0.98);
             border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
             box-shadow: 0 10px 40px -10px rgba(0,0,0,0.8);
             opacity: 0; visibility: hidden; transform: translateY(-10px);
@@ -168,11 +164,147 @@
             display: block; width: 100%; padding: 10px 16px; text-align: left;
             color: rgba(255, 255, 255, 0.6); font-size: 0.75rem; font-family: 'Space Mono', monospace;
             cursor: pointer; transition: background 0.2s;
-            will-change: background, color;
         }
         .dropdown-item:hover { background: rgba(255, 255, 255, 0.05); color: white; }
         .dropdown-item.selected { color: #22d3ee; background: rgba(34, 211, 238, 0.05); }
+
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .line-clamp-1 {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* RESERVATION MODAL STYLES */
+        .reservation-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .reservation-modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .reservation-modal-content {
+            background: #050505;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 32px;
+            width: 500px;
+            max-width: 90vw;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .reservation-modal.open .reservation-modal-content {
+            transform: scale(1);
+        }
+        .duration-btn {
+            padding: 12px 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+        .duration-btn:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+        }
+        .duration-btn.active {
+            border-color: #22d3ee;
+            color: #22d3ee;
+            background: rgba(34, 211, 238, 0.1);
+        }
+        .custom-days-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 0;
+            font-family: 'Space Mono', monospace;
+            color: white;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .custom-days-input:focus {
+            border-bottom-color: #22d3ee;
+        }
+        .custom-days-label {
+            position: absolute;
+            left: 0;
+            top: 12px;
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+        .custom-days-input:focus + .custom-days-label,
+        .custom-days-input:not(:placeholder-shown) + .custom-days-label {
+            top: -8px;
+            font-size: 0.625rem;
+            color: #22d3ee;
+        }
+        .confirm-btn {
+            padding: 12px 32px;
+            background: rgba(34, 211, 238, 0.1);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-radius: 8px;
+            color: #22d3ee;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .confirm-btn:hover {
+            background: rgba(34, 211, 238, 0.2);
+            border-color: #22d3ee;
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+        }
+        .cancel-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .cancel-btn:hover {
+            color: white;
+        }
     </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -335,7 +467,7 @@
                         </a>
                     </nav>
                 </div>
-                <div class="text-xs text-white/20 font-mono">v0.2 // SEAMLESS</div>
+                <div class="text-xs text-white/20 font-mono">v0.4 // OPTIMIZED</div>
             </aside>
 
             <!-- MAIN CONTENT -->
@@ -346,8 +478,8 @@
                     <div id="view-dash-main" class="absolute inset-0 flex flex-col gap-6 transition-none">
                         <div class="glass-panel rounded-2xl p-6 flex justify-between items-center h-24 shrink-0">
                             <div>
-                                <h2 class="text-xl font-bold text-white tracking-tight">WELCOME BACK, <span id="user-name" class="text-cyan-400">LOADING...</span></h2>
-                                <p id="user-details" class="text-xs text-white/40 font-mono mt-1">CONNECTING...</p>
+                                <h2 class="text-xl font-bold text-white tracking-tight">WELCOME BACK, <span id="user-name" class="text-cyan-400">...</span></h2>
+                                <p id="user-details" class="text-xs text-white/40 font-mono mt-1">WAITING FOR AUTHENTICATION...</p>
                             </div>
                             <div class="text-right">
                                 <p class="text-xs text-white/40 font-mono mb-1">CURRENT DATE</p>
@@ -495,6 +627,35 @@
         </div>
     </div>
 
+    <!-- RESERVATION MODAL -->
+    <div id="reservation-modal" class="reservation-modal">
+        <div class="reservation-modal-content">
+            <h2 class="text-white text-xl font-bold font-mono uppercase tracking-wider mb-1">CONFIRM_RESERVATION</h2>
+            <p id="modal-book-title" class="text-cyan-400 text-sm font-mono mb-8">Title goes here</p>
+
+            <p class="text-xs text-white/40 font-bold tracking-widest uppercase mb-4">SELECT DURATION:</p>
+            
+            <div class="grid grid-cols-3 gap-3 mb-8">
+                <button onclick="selectDuration(7, this)" class="duration-btn">1 WEEK</button>
+                <button onclick="selectDuration(14, this)" class="duration-btn active">2 WEEKS</button>
+                <button onclick="selectDuration(30, this)" class="duration-btn">1 MONTH</button>
+            </div>
+
+            <div class="relative mb-8">
+                <input type="number" id="custom-days" placeholder=" " 
+                    class="custom-days-input"
+                    oninput="selectCustomDuration()">
+                <label for="custom-days" class="custom-days-label">ENTER CUSTOM DAYS...</label>
+                <span class="absolute right-0 top-3 text-xs text-white/20 font-mono">DAYS</span>
+            </div>
+
+            <div class="flex justify-between items-center mt-4">
+                <button onclick="closeReservationModal()" class="cancel-btn">CANCEL</button>
+                <button onclick="confirmReservation()" class="confirm-btn">CONFIRM_</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     // ============================================
     // GLOBAL STATE
@@ -502,8 +663,9 @@
     let CURRENT_USER_ID = null;
     let CANVAS_MODE = 'aurora';
     let canvasMorphProgress = 0;
-    
-    const CLOUD_NAME = "dvxgvvb56"; // <-- Добавь эту строку
+    let selectedReservationDays = 14;
+    let currentReservationBookId = null;
+    let currentReservationBookTitle = '';
 
     // ============================================
     // UNIFIED CANVAS WITH MORPHING
@@ -520,9 +682,8 @@
 
     uniform float iTime;
     uniform vec3 iResolution;
-    uniform float uMorphProgress; // 0.0 = aurora, 1.0 = waves
+    uniform float uMorphProgress;
     
-    // Wave params
     uniform bool enableTop;
     uniform bool enableMiddle;
     uniform bool enableBottom;
@@ -536,21 +697,19 @@
     uniform vec3 middleWavePosition;
     uniform vec3 bottomWavePosition;
     
-    uniform vec3 lineGradient[8];
+    uniform vec3 lineGradient[4];
     uniform int lineGradientCount;
 
-    // Aurora gradient colors
     uniform vec3 auroraStops[3];
 
     const vec3 BLACK = vec3(0.0);
-    const vec3 PINK  = vec3(233.0, 71.0, 245.0) / 255.0;
-    const vec3 BLUE  = vec3(47.0,  75.0, 162.0) / 255.0;
 
     mat2 rotate(float r) {
-        return mat2(cos(r), sin(r), -sin(r), cos(r));
+        float c = cos(r);
+        float s = sin(r);
+        return mat2(c, s, -s, c);
     }
 
-    // AURORA EFFECT (simplex noise)
     vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
     float snoise(vec2 v) {
         const vec4 C = vec4(0.211, 0.366, -0.577, 0.024);
@@ -589,7 +748,6 @@
         return vec4(i * ramp * a, a);
     }
 
-    // WAVE EFFECT
     vec3 getLineColor(float t, vec3 baseColor) {
         if (lineGradientCount <= 0) return baseColor;
         vec3 gradientColor;
@@ -620,7 +778,7 @@
         vec3 col = vec3(0.0);
         
         if (enableBottom) {
-            for (int i = 0; i < 20; ++i) {
+            for (int i = 0; i < 8; ++i) {
                 if (i >= bottomLineCount) break;
                 float fi = float(i);
                 float t = fi / max(float(bottomLineCount - 1), 1.0);
@@ -636,7 +794,7 @@
         }
 
         if (enableMiddle) {
-            for (int i = 0; i < 20; ++i) {
+            for (int i = 0; i < 8; ++i) {
                 if (i >= middleLineCount) break;
                 float fi = float(i);
                 float t = fi / max(float(middleLineCount - 1), 1.0);
@@ -652,7 +810,7 @@
         }
 
         if (enableTop) {
-            for (int i = 0; i < 20; ++i) {
+            for (int i = 0; i < 8; ++i) {
                 if (i >= topLineCount) break;
                 float fi = float(i);
                 float t = fi / max(float(topLineCount - 1), 1.0);
@@ -679,7 +837,6 @@
         vec4 auroraCol = auroraEffect(uv);
         vec4 waveCol = waveEffect(baseUv);
 
-        // Морфинг между эффектами
         vec4 finalColor = mix(auroraCol, waveCol, uMorphProgress);
         
         gl_FragColor = finalColor;
@@ -687,6 +844,8 @@
     `;
 
     let canvasUniforms, canvasMesh, canvasRenderer, canvasScene, canvasCamera, canvasClock;
+    let isCanvasRunning = true;
+    let frameCount = 0;
 
     function initUnifiedCanvas() {
         const canvas = document.getElementById('unified-canvas');
@@ -704,7 +863,8 @@
             powerPreference: "high-performance"
         });
         
-        canvasRenderer.setPixelRatio(1);
+        const dpr = Math.min(window.devicePixelRatio, 1.5);
+        canvasRenderer.setPixelRatio(dpr);
         canvasRenderer.setSize(window.innerWidth, window.innerHeight);
 
         canvasUniforms = {
@@ -712,23 +872,21 @@
             iResolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
             uMorphProgress: { value: 0 },
             
-            // Wave params
             enableTop: { value: true },
             enableMiddle: { value: true },
             enableBottom: { value: true },
-            topLineCount: { value: 6 },
-            middleLineCount: { value: 6 },
-            bottomLineCount: { value: 6 },
+            topLineCount: { value: 5 },
+            middleLineCount: { value: 5 },
+            bottomLineCount: { value: 5 },
             topLineDistance: { value: 0.05 },
             middleLineDistance: { value: 0.05 },
             bottomLineDistance: { value: 0.05 },
             topWavePosition: { value: new THREE.Vector3(10.0, 0.5, -0.4) },
             middleWavePosition: { value: new THREE.Vector3(5.0, 0.0, 0.2) },
             bottomWavePosition: { value: new THREE.Vector3(2.0, -0.7, 0.4) },
-            lineGradient: { value: new Array(8).fill(0).map(() => new THREE.Vector3(1, 1, 1)) },
+            lineGradient: { value: new Array(4).fill(0).map(() => new THREE.Vector3(1, 1, 1)) },
             lineGradientCount: { value: 0 },
             
-            // Aurora params
             auroraStops: { value: [
                 new THREE.Color('#000000'),
                 new THREE.Color('#22d3ee'),
@@ -736,7 +894,6 @@
             ]}
         };
 
-        // Gradient для waves
         const colors = ["#22d3ee", "#3b82f6"];
         canvasUniforms.lineGradientCount.value = colors.length;
         colors.forEach((hex, i) => {
@@ -756,20 +913,29 @@
         canvasMesh = new THREE.Mesh(geometry, material);
         canvasScene.add(canvasMesh);
 
+        let resizeTimeout;
         function resize() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            canvasRenderer.setSize(width, height);
-            canvasUniforms.iResolution.value.set(width, height, 1);
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                canvasRenderer.setSize(width, height);
+                canvasUniforms.iResolution.value.set(width, height, 1);
+            }, 100);
         }
-        window.addEventListener('resize', resize);
+        window.addEventListener('resize', resize, { passive: true });
         resize();
 
         canvasClock = new THREE.Clock();
         
         function animate() {
+            if (!isCanvasRunning) return;
             requestAnimationFrame(animate);
-            canvasUniforms.iTime.value = canvasClock.getElapsedTime();
+            
+            frameCount++;
+            if (frameCount % 1 === 0) {
+                canvasUniforms.iTime.value = canvasClock.getElapsedTime();
+            }
             canvasUniforms.uMorphProgress.value = canvasMorphProgress;
             canvasRenderer.render(canvasScene, canvasCamera);
         }
@@ -777,7 +943,7 @@
     }
 
     // ============================================
-    // PAGE TRANSITION: LOGIN -> DASHBOARD
+    // PAGE TRANSITION: LOGIN -> DASHBOARD (ИЗМЕНЕНО: логин уезжает ВНИЗ)
     // ============================================
     function transitionToDashboard() {
         const loginPage = document.getElementById('login-page');
@@ -785,15 +951,15 @@
 
         const tl = gsap.timeline();
 
-        // Scroll effect: login уезжает вверх, dashboard приезжает снизу
+        // Логин уезжает ВНИЗ, дашборд приезжает сверху
         tl.to(loginPage, {
-            y: '-100%',
+            y: '100%',
             opacity: 0,
             duration: 1.5,
             ease: 'power2.inOut'
         })
         .set(dashPage, { 
-            y: '100%',
+            y: '-100%',
             opacity: 0,
             pointerEvents: 'auto'
         }, 0)
@@ -806,7 +972,6 @@
         .to({}, {
             duration: 1.5,
             onUpdate: function() {
-                // Морфинг canvas: aurora -> waves
                 canvasMorphProgress = this.progress();
             }
         }, 0);
@@ -814,7 +979,7 @@
         tl.eventCallback('onComplete', () => {
             loginPage.classList.remove('active');
             dashPage.classList.add('active');
-            gsap.set(loginPage, { y: '0%' }); // reset
+            gsap.set(loginPage, { y: '0%' });
         });
     }
 
@@ -824,15 +989,15 @@
 
         const tl = gsap.timeline();
 
-        // Reverse scroll: dashboard уезжает вниз, login приезжает сверху
+        // Дашборд уезжает вверх, логин приезжает снизу
         tl.to(dashPage, {
-            y: '100%',
+            y: '-100%',
             opacity: 0,
             duration: 1.5,
             ease: 'power2.inOut'
         })
         .set(loginPage, { 
-            y: '-100%',
+            y: '100%',
             opacity: 0,
             pointerEvents: 'auto'
         }, 0)
@@ -845,7 +1010,6 @@
         .to({}, {
             duration: 1.5,
             onUpdate: function() {
-                // Морфинг canvas: waves -> aurora
                 canvasMorphProgress = 1 - this.progress();
             }
         }, 0);
@@ -853,7 +1017,7 @@
         tl.eventCallback('onComplete', () => {
             dashPage.classList.remove('active');
             loginPage.classList.add('active');
-            gsap.set(dashPage, { y: '0%' }); // reset
+            gsap.set(dashPage, { y: '0%' });
         });
     }
 
@@ -892,7 +1056,6 @@
                 const tokenData = await response.json();
                 localStorage.setItem('access_token', tokenData.access_token);
                 
-                // Переход на dashboard с эффектом
                 await fetchUserData();
                 transitionToDashboard();
             } else {
@@ -909,6 +1072,7 @@
     function handleLogout() {
         if (!confirm('LOG OUT FROM SYSTEM?')) return;
         localStorage.removeItem('access_token');
+        localStorage.removeItem('lastView'); // Очищаем сохраненную страницу при логауте
         transitionToLogin();
     }
 
@@ -1161,6 +1325,7 @@
 
         if (response.status === 401) {
             localStorage.removeItem('access_token');
+            localStorage.removeItem('lastView');
             transitionToLogin();
             return null;
         }
@@ -1210,6 +1375,7 @@
         } catch (e) {
             console.error("Dashboard data error:", e);
             DOM.userName.textContent = "ERROR";
+            DOM.userDetails.textContent = "CONNECTION FAILED";
         }
     }
 
@@ -1271,52 +1437,41 @@
     }
 
     function renderBatch(books) {
-        if (books.length === 0 && catalogState.books.length === 0) {
-            DOM.grid.innerHTML = `<div class="col-span-full text-center text-white/30 py-10 font-mono">NO DATA FOUND</div>`;
-            return;
-        }
-
-        const fragment = document.createDocumentFragment();
-        books.forEach((book, index) => {
-            const card = document.createElement('div');
-            card.className = "catalog-card group relative aspect-[2/3] bg-black/40 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-400/50 transition-all cursor-pointer opacity-0 translate-y-4";
+        const container = document.getElementById('cards-container');
+        
+        books.forEach(book => {
+            const el = document.createElement('div');
+            el.className = 'catalog-card group relative';
             
-            const genre = book.genre?.name || "OTHER";
-            const author = book.author?.name || "Unknown Author";
+            // ЛОГИКА КАРТИНОК:
+            // Если есть путь в БД -> берем из локальной папки /static/covers/
+            // Если нет -> заглушка
+            const imageUrl = book.cover_path 
+                ? `/static/covers/${book.cover_path}` 
+                : `https://placehold.co/300x450/1a1a1a/FFF?text=No+Cover`;
 
             const isAvailable = book.count > 0;
             
-            const dotColor = isAvailable 
-                ? "bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]" 
-                : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]";
-
-            // Формируем URL изображения из Cloudinary
-            const imageUrl = book.cover_path 
-                ? `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${book.cover_path}`
-                : `https://picsum.photos/300/450?random=${book.id}`;
-
+            // ЛОГИКА КНОПКИ:
+            // Добавляем реальный вызов reserveBook вместо alert
             const btnHtml = isAvailable
-                ? `<button onclick="alert('Reservation modal not implemented in SPA demo')" class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">RESERVE_</button>`
-                : `<button disabled class="mt-2 w-full py-2 bg-white/5 border border-white/5 text-xs font-bold text-white/20 tracking-widest opacity-0 group-hover:opacity-100 cursor-not-allowed rounded">OUT_OF_STOCK</button>`;
+                ? `<button onclick="reserveBook(${book.id}, '${book.title.replace(/'/g, "\\'")}'); event.stopPropagation();" class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">RESERVE_</button>`
+                : `<button disabled class="mt-2 w-full py-2 bg-red-500/10 border border-red-500/20 text-xs font-bold text-red-400/50 tracking-widest cursor-not-allowed rounded">OUT_OF_STOCK</button>`;
 
-            card.innerHTML = `
-                <img src="${imageUrl}" loading="lazy" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-500">
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80"></div>
-                <div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 translate-y-2 group-hover:translate-y-0 transition-transform">
-                    <span class="text-[10px] font-bold text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded w-fit backdrop-blur-sm border border-cyan-400/20">${genre.toUpperCase()}</span>
-                    <h4 class="text-white font-bold leading-tight drop-shadow-md line-clamp-2">${book.title}</h4>
-                    <p class="text-xs text-white/50 font-mono line-clamp-1">${author}</p>
+            el.innerHTML = `
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/80 to-black z-10 pointer-events-none"></div>
+                <img src="${imageUrl}" alt="${book.title}" class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110" loading="lazy">
+                <div class="absolute bottom-0 left-0 w-full p-4 z-20 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                    <div class="text-[10px] text-cyan-400 tracking-widest mb-1 uppercase">${book.genre ? book.genre.name : 'VINTAGE'}</div>
+                    <h3 class="text-white font-bold leading-tight mb-1 truncate" title="${book.title}">${book.title}</h3>
+                    <p class="text-xs text-gray-400 mb-3">${book.author ? book.author.name : 'Unknown'}</p>
                     ${btnHtml}
                 </div>
-                <div class="absolute top-3 right-3 w-2 h-2 rounded-full ${dotColor}"></div>
             `;
-            
-            setTimeout(() => card.classList.remove('opacity-0', 'translate-y-4'), 50 + (index * 30));
-            fragment.appendChild(card);
+            container.appendChild(el);
         });
-        DOM.grid.appendChild(fragment);
     }
-
+    
     async function initDropdowns() {
         const gRes = await fetch('/api/genres/');
         const genres = await gRes.json();
@@ -1359,7 +1514,7 @@
         if (!e.target.closest('.group-dropdown')) {
             document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.remove('open'));
         }
-    });
+    }, { passive: true });
 
     function applyFilter(type, id, name) {
         const btn = document.getElementById(`btn-${type}`);
@@ -1425,6 +1580,85 @@
             catalogState.search = e.target.value;
             fetchBooks(true);
         }, 500);
+    }, { passive: true });
+
+    // ============================================
+    // RESERVATION MODAL FUNCTIONS
+    // ============================================
+    function openReservationModal(bookId, bookTitle) {
+        currentReservationBookId = bookId;
+        currentReservationBookTitle = bookTitle;
+        
+        document.getElementById('modal-book-title').textContent = bookTitle;
+        document.getElementById('custom-days').value = '';
+        
+        // Reset duration buttons
+        document.querySelectorAll('.duration-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.duration-btn')[1].classList.add('active'); // 2 weeks default
+        selectedReservationDays = 14;
+        
+        document.getElementById('reservation-modal').classList.add('open');
+    }
+
+    function closeReservationModal() {
+        document.getElementById('reservation-modal').classList.remove('open');
+        currentReservationBookId = null;
+        currentReservationBookTitle = '';
+    }
+
+    function selectDuration(days, btn) {
+        selectedReservationDays = days;
+        document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('custom-days').value = '';
+    }
+
+    function selectCustomDuration() {
+        const customDays = document.getElementById('custom-days').value;
+        if (customDays && !isNaN(customDays) && customDays > 0) {
+            selectedReservationDays = parseInt(customDays);
+            document.querySelectorAll('.duration-btn').forEach(btn => btn.classList.remove('active'));
+        }
+    }
+
+    async function confirmReservation() {
+        if (!currentReservationBookId) return;
+
+        const returnDate = new Date();
+        returnDate.setDate(returnDate.getDate() + selectedReservationDays);
+        const dateStr = returnDate.toISOString().split('T')[0];
+
+        try {
+            const res = await apiFetch('/api/reservations/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: CURRENT_USER_ID,
+                    book_id: currentReservationBookId,
+                    return_date: dateStr
+                })
+            });
+
+            if (res && res.ok) {
+                closeReservationModal();
+                alert('✅ Reserved successfully!');
+                fetchBooks(true);
+                fetchUserData();
+            } else {
+                const err = await res.json();
+                alert(`❌ ${err.detail || 'Reservation failed'}`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('❌ Network error');
+        }
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('reservation-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'reservation-modal') {
+            closeReservationModal();
+        }
     });
 
     function switchDashboardView(viewName) {
@@ -1444,6 +1678,9 @@
             activeNav.classList.remove('text-white/60');
             activeNav.classList.add('text-cyan-400', 'bg-white/5', 'border-l-2', 'border-cyan-400', 'font-bold');
         }
+
+        // Сохраняем текущую страницу в localStorage
+        localStorage.setItem('lastView', viewName);
 
         if (viewName === 'catalog' && !isCatalogInitialized) {
             fetchBooks(true);
@@ -1470,6 +1707,7 @@
             const statusColor = book.status === 'overdue' ? 'text-red-500 animate-pulse' : 'text-green-400';
             const dotColor = book.status === 'overdue' ? 'bg-red-500' : 'bg-green-500';
             el.innerHTML = `<div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #22d3ee; box-shadow: 0 0 10px #22d3ee;"></div><div class="mt-2 flex justify-between items-start"><span class="text-[9px] font-bold border border-white/10 px-1.5 py-0.5 rounded text-white/60 tracking-wider bg-black/20">${(book.genre||'GENRE').toUpperCase()}</span><div class="w-1.5 h-1.5 rounded-full ${dotColor}"></div></div><div class="flex flex-col justify-center flex-grow"><h4 class="text-xl font-bold leading-tight text-white mb-1">${book.title}</h4><p class="text-[11px] text-white/40 font-mono">${book.author}</p></div><div class="border-t border-white/10 pt-3 flex justify-between items-end"><div><span class="block text-[8px] text-white/20 font-mono mb-0.5">RETURN BY</span><span class="text-xs font-mono font-bold ${statusColor}">${book.date}</span></div><span class="text-[9px] text-white/10 font-mono">#0${i + 1}</span></div>`;
+            
             el.addEventListener('mouseenter', () => {
                 loans.forEach((_, idx) => {
                     if(idx >= 5) return;
@@ -1483,9 +1721,11 @@
                         gsap.to(target, { transform: getPushedTransform(transformStyles[idx], offset), scale: 0.9, duration: 0.4, ease: 'back.out(1.4)', delay: Math.abs(i-idx)*0.05, overwrite: 'auto' });
                     }
                 });
-            });
+            }, { passive: true });
+            
             container.appendChild(el);
         });
+        
         container.addEventListener('mouseleave', () => {
             loans.forEach((_, idx) => {
                 if(idx>=5) return;
@@ -1493,7 +1733,7 @@
                 t.classList.remove('is-hovered');
                 gsap.to(t, { transform: transformStyles[idx], scale: 1, duration: 0.4, ease: 'back.out(1.4)', overwrite: 'auto' });
             });
-        });
+        }, { passive: true });
     }
 
     async function fetchHistory() {
@@ -1521,7 +1761,7 @@
             return;
         }
 
-        let html = '';
+        const fragment = document.createDocumentFragment();
         items.forEach(item => {
             let statusStyle = "";
             let actionBtn = "";
@@ -1540,8 +1780,9 @@
             const dateTaken = new Date(item.reserve_date).toLocaleDateString();
             const dateReturn = new Date(item.return_date).toLocaleDateString();
 
-            html += `
-            <div class="grid grid-cols-12 items-center px-4 py-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 group">
+            const row = document.createElement('div');
+            row.className = "grid grid-cols-12 items-center px-4 py-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 group";
+            row.innerHTML = `
                 <div class="col-span-4 flex flex-col">
                     <span class="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors truncate pr-4">${item.book.title}</span>
                     <span class="text-xs text-white/40 font-mono">${item.book.author.name}</span>
@@ -1552,9 +1793,11 @@
                     <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${statusStyle}">${item.status}</span>
                 </div>
                 <div class="col-span-2 text-right">${actionBtn}</div>
-            </div>`;
+            `;
+            fragment.appendChild(row);
         });
-        DOM.historyList.innerHTML = html;
+        DOM.historyList.innerHTML = '';
+        DOM.historyList.appendChild(fragment);
     }
 
     function updateHistoryStats(stats) {
@@ -1585,26 +1828,44 @@
         }
     }
 
-    setInterval(() => {
+    function updateClock() {
         const clockEl = document.getElementById('clock');
         if(clockEl) clockEl.innerText = new Date().toLocaleTimeString('ru-RU');
-    }, 1000);
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
 
     // ============================================
-    // INIT
+    // INIT - ИСПРАВЛЕННАЯ ЛОГИКА
     // ============================================
     window.addEventListener('DOMContentLoaded', () => {
         initUnifiedCanvas();
 
-        // Check if logged in
         const token = localStorage.getItem('access_token');
         if (token) {
-            // Auto-login: show dashboard
-            fetchUserData();
-            transitionToDashboard();
+            // Пользователь залогинен - показываем дашборд
+            document.getElementById('login-page').classList.remove('active');
+            document.getElementById('dashboard-page').classList.add('active');
+            
+            // Загружаем данные пользователя
+            fetchUserData().then(() => {
+                // После загрузки данных - восстанавливаем последнюю страницу
+                const lastView = localStorage.getItem('lastView') || 'dashboard';
+                
+                // Если последняя страница была catalog, инициализируем её
+                if (lastView === 'catalog') {
+                    isCatalogInitialized = true;
+                    fetchBooks(true);
+                    initDropdowns();
+                }
+                
+                // Переключаемся на сохраненную страницу
+                switchDashboardView(lastView);
+            });
         } else {
-            // Show login page
+            // Не залогинен - показываем логин
             document.getElementById('login-page').classList.add('active');
+            document.getElementById('dashboard-page').classList.remove('active');
         }
     });
     </script>
