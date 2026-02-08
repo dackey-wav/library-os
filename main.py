@@ -29,7 +29,7 @@ app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-# app.mount("/dataset", StaticFiles(directory="data/dataset"), name="dataset")
+app.mount("/dataset", StaticFiles(directory="data/dataset"), name="dataset")
 
 def get_db():
     db = SessionLocal()

@@ -1437,41 +1437,53 @@
     }
 
     function renderBatch(books) {
-        const container = document.getElementById('cards-container');
-        
-        books.forEach(book => {
-            const el = document.createElement('div');
-            el.className = 'catalog-card group relative';
+        if (books.length === 0 && catalogState.books.length === 0) {
+            DOM.grid.innerHTML = `<div class="col-span-full text-center text-white/30 py-10 font-mono">NO DATA FOUND</div>`;
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        books.forEach((book, index) => {
+            const card = document.createElement('div');
+            card.className = "catalog-card group relative aspect-[2/3] bg-black/40 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-400/50 transition-all cursor-pointer opacity-0 translate-y-4";
             
-            // ЛОГИКА КАРТИНОК:
-            // Если есть путь в БД -> берем из локальной папки /static/covers/
-            // Если нет -> заглушка
-            const imageUrl = book.cover_path 
-                ? `/static/covers/${book.cover_path}` 
-                : `https://placehold.co/300x450/1a1a1a/FFF?text=No+Cover`;
+            const genre = book.genre?.name || "OTHER";
+            const author = book.author?.name || "Unknown Author";
 
             const isAvailable = book.count > 0;
             
-            // ЛОГИКА КНОПКИ:
-            // Добавляем реальный вызов reserveBook вместо alert
-            const btnHtml = isAvailable
-                ? `<button onclick="reserveBook(${book.id}, '${book.title.replace(/'/g, "\\'")}'); event.stopPropagation();" class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">RESERVE_</button>`
-                : `<button disabled class="mt-2 w-full py-2 bg-red-500/10 border border-red-500/20 text-xs font-bold text-red-400/50 tracking-widest cursor-not-allowed rounded">OUT_OF_STOCK</button>`;
+            const dotColor = isAvailable 
+                ? "bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]" 
+                : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]";
 
-            el.innerHTML = `
-                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/80 to-black z-10 pointer-events-none"></div>
-                <img src="${imageUrl}" alt="${book.title}" class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110" loading="lazy">
-                <div class="absolute bottom-0 left-0 w-full p-4 z-20 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                    <div class="text-[10px] text-cyan-400 tracking-widest mb-1 uppercase">${book.genre ? book.genre.name : 'VINTAGE'}</div>
-                    <h3 class="text-white font-bold leading-tight mb-1 truncate" title="${book.title}">${book.title}</h3>
-                    <p class="text-xs text-gray-400 mb-3">${book.author ? book.author.name : 'Unknown'}</p>
+            const imageUrl = book.cover_path 
+                ? `dataset/${book.cover_path}`
+                : `https://picsum.photos/300/450?random=${book.id}`;
+
+            const btnHtml = isAvailable
+                ? `<button onclick="openReservationModal(${book.id}, '${book.title.replace(/'/g, "\\'")}'); event.stopPropagation();" class="mt-2 w-full py-2 bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 text-xs font-bold text-white tracking-widest opacity-0 group-hover:opacity-100 transition-all rounded">RESERVE_</button>`
+                : `<button disabled class="mt-2 w-full py-2 bg-white/5 border border-white/5 text-xs font-bold text-white/20 tracking-widest opacity-0 group-hover:opacity-100 cursor-not-allowed rounded">OUT_OF_STOCK</button>`;
+
+            card.innerHTML = `
+                <img src="${imageUrl}" loading="lazy" decoding="async" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-500">
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80"></div>
+                <div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 translate-y-2 group-hover:translate-y-0 transition-transform">
+                    <span class="text-[10px] font-bold text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded w-fit border border-cyan-400/20">${genre.toUpperCase()}</span>
+                    <h4 class="text-white font-bold leading-tight drop-shadow-md line-clamp-2">${book.title}</h4>
+                    <p class="text-xs text-white/50 font-mono line-clamp-1">${author}</p>
                     ${btnHtml}
                 </div>
+                <div class="absolute top-3 right-3 w-2 h-2 rounded-full ${dotColor}"></div>
             `;
-            container.appendChild(el);
+            
+            requestAnimationFrame(() => {
+                setTimeout(() => card.classList.remove('opacity-0', 'translate-y-4'), 50 + (index * 30));
+            });
+            fragment.appendChild(card);
         });
+        DOM.grid.appendChild(fragment);
     }
-    
+
     async function initDropdowns() {
         const gRes = await fetch('/api/genres/');
         const genres = await gRes.json();

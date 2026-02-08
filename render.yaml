@@ -6,7 +6,7 @@ services:
       pip install -r requirements.txt
       mkdir -p static/covers
       wget -O covers.zip https://github.com/dackey-wav/SmartLibrary/releases/download/v1.0-covers/covers.zip
-      unzip -o covers.zip -d static/covers
+      unzip -o covers.zip -d static/
       rm covers.zip
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     
