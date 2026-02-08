@@ -6,7 +6,7 @@ services:
       pip install -r requirements.txt
       mkdir -p static/covers
       wget -O covers.zip https://github.com/dackey-wav/SmartLibrary/releases/download/v1.0-covers/covers.zip
-      unzip -o covers.zip -d static/
+      unzip -o covers.zip -d static/covers
       rm covers.zip
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     
@@ -19,11 +19,5 @@ services:
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "30"
-      - key: CLOUD_NAME
-        value: ${CLOUD_NAME}
-      - key: API_KEY_CLOUDINARY
-        value: ${API_KEY_CLOUDINARY}
-      - key: API_SECRET_CLOUDINARY
-        value: ${API_SECRET_CLOUDINARY}
       - key: APP_DATABASE_URL
         value: postgresql+psycopg://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}?sslmode=require
