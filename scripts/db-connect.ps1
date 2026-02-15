@@ -6,7 +6,7 @@ param(
     [string[]]$Args
 )
 
-# Загрузить .env
+# load .env
 if (Test-Path .env) {
     Get-Content .env | ForEach-Object {
         if ($_ -match '^([^=\s]+)=(.+)$') {
